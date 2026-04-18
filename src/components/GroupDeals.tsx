@@ -5,7 +5,7 @@ import { GroupBuyingService, AllianceDeal } from "@/services/groupBuyingService"
 
 interface GroupDealsProps {
   lang: "ko" | "en";
-  onJoin: (itemName: string, quantity: string) => void;
+  onJoin: (dealId: string, itemName: string, quantity: string) => void;
   parsedItems?: { name: string, quantity: string }[];
   trustScore?: number;
 }
@@ -76,7 +76,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
     const deal = deals.find(d => d.id === dealId);
     if (deal) {
       const addedVolume = deal.itemName.toLowerCase().includes("beef") ? 50 : 100;
-      onJoin(deal.itemName, `${addedVolume}lb`);
+      onJoin(deal.id, deal.itemName, `${addedVolume}lb`);
     }
   };
 

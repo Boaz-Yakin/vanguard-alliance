@@ -30,16 +30,21 @@
 - [x] **Task 7: Vendor Routing Logic (Action C)**
   - [x] Basic keyword-to-vendor mapping engine.
   - [x] UI display of routed suppliers for transparency.
+- [x] **Task 8: Resource Optimization Protocol (Action D)**
+  - [x] Implement `ImageService` with `browser-image-compression`.
+  - [x] Force WebP conversion and client-side resizing.
+
 ## 🚀 Phase 2.0: Economic Domination (Alliance Synergy)
-- [ ] **Task 9: Demand Aggregation Engine (Action G)**
-  - [ ] Implement `GroupBuyingService` to track global order volumes.
-  - [ ] Create 'Synergy Discount' logic based on trust scores and volume.
-- [ ] **Task 10: Syndicate Deal Dashboard (Action H)**
-  - [ ] Build `GroupDeals` component with real-time status bars.
-  - [ ] Implement## Phase 3.0: Tactical Execution (Real-World Integration) 🛡️
-- [ ] Task 12: Swap Mock Supabase with Real Connection (Schema sync)
-- [ ] Task 13: Implement Actual Dispatch Logic (Email/API Simulation)
-- [ ] Task 14: Dynamic Trust Score Calculation Engine
-- [ ] Task 15: Responsive Dashboard Polish for Mobile Field Use
+- [x] **Task 9: Demand Aggregation Engine (Action G)**
+  - [x] Implement `GroupBuyingService` to track global order volumes.
+  - [x] Create 'Synergy Discount' logic based on trust scores and volume.
+- [x] **Task 10: Syndicate Deal Dashboard (Action H)**
+  - [x] Build `GroupDeals` component with real-time status bars.
+
+## 🛡️ Phase 3.0: Tactical Execution (Real-World Integration)
+- [x] Task 12: Swap Mock Supabase with Real Connection (Schema sync)
+- [x] Task 13: Implement Actual Dispatch Logic (Email/API Simulation)
+- [x] Task 14: Dynamic Trust Score Calculation Engine
+- [x] Task 15: Responsive Dashboard Polish for Mobile Field Use
 
 **"Victory belongs to those who persist." - General Jegal**

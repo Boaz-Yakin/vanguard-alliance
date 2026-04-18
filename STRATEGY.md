@@ -7,6 +7,7 @@ To establish "VANGUARD ALLIANCE" as the dominant order routing platform by elimi
 1. **The Frictionless Input (Zero-Entry):** Use the specialized Regex & AI hybrid parser to allow human-style ordering.
 2. **The Trust Engine (Loyalty):** Treat every order as a trust-building event. Points and Levels are not features; they are the currency of the alliance.
 3. **The Multi-Channel Dispatch:** Ensure suppliers receive orders in the most convenient format (PDF via Email/SMS) without changing their existing workflow.
+4. **Resource Optimization Protocol:** All visual assets must be compressed (WebP/Client-side) to ensure infrastructure longevity and zero-friction UX.
 
 ## 🗺️ Execution Roadmap (The Critical Path)
 

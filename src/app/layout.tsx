@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "VANGUARD ALLIANCE | Elite B2B Order Engine",
-  description: "AI-powered order fulfillment and group buying synergy for elite store owners. United in economic power.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  title: "Chef's Collective Deal | VANGUARD",
+  description: "Exclusive group buying platform for culinary professionals.",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -24,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="ko" className={`${manrope.variable} ${jakarta.variable}`}>
       <body>{children}</body>
     </html>
   );

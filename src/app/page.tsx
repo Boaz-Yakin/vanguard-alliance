@@ -1,365 +1,341 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { OrderService } from "@/services/orderService";
-import { parseOrderText } from "@/lib/parser";
-import { OrderHistory } from "@/components/OrderHistory";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { DealService } from "@/services/dealService";
+import { supabase } from "@/lib/supabaseClient";
 import { GroupDeals } from "@/components/GroupDeals";
-import { GroupBuyingService } from "@/services/groupBuyingService";
 
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: string;
-  supplier_name?: string;
-}
+// Helper: format ms remaining into a human-readable countdown
+function formatCountdown(expiresAt: string | undefined, lang: "ko" | "en"): { label: string; urgent: boolean } {
+  if (!expiresAt) return { label: lang === "ko" ? "진행중" : "Active", urgent: false };
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return { label: lang === "ko" ? "마감" : "Closed", urgent: true };
 
-interface DispatchStep {
-  supplierName: string;
-  status: "idle" | "connecting" | "encrypting" | "sent" | "failed";
-  pdfBlob?: Blob;
+  const hours = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+
+  if (hours < 1) return { label: `${mins}m ${secs}s`, urgent: true };
+  if (hours < 24) return { label: lang === "ko" ? `${hours}시간 남음` : `${hours}h left`, urgent: hours < 6 };
+  const days = Math.floor(hours / 24);
+  return { label: lang === "ko" ? `${days}일 남음` : `${days}d left`, urgent: false };
 }
 
 export default function Home() {
-  const [inputText, setInputText] = useState("");
+  const [activeTab, setActiveTab] = useState("All");
   const [lang, setLang] = useState<"ko" | "en">("ko");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [deals, setDeals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   
-  // Phase 5.0: Multi-location State
-  const [branches] = useState([
-    { id: "b1", name: "Vanguard Downtown", location: "New York" },
-    { id: "b2", name: "Vanguard Uptown", location: "Boston" },
-    { id: "b3", name: "Elite Warehouse", location: "Global" }
-  ]);
-  const [activeBranch, setActiveBranch] = useState(branches[0]);
-  
-  const [userStats, setUserStats] = useState({ points: 1250, trust: 5.00 });
-  const [routedItems, setRoutedItems] = useState<OrderItem[]>([]);
-  const [dispatchSteps, setDispatchSteps] = useState<DispatchStep[]>([]);
-  const [potentialSavings, setPotentialSavings] = useState(0);
-  const [allDeals, setAllDeals] = useState<any[]>([]);
+  // Modal States
+  const [selectedDeal, setSelectedDeal] = useState<{id: string, unit: string, title: string} | null>(null);
+  const [qty, setQty] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Parser
-  const parsedItems = useMemo(() => parseOrderText(inputText), [inputText]);
-
-  // Update routing & savings preview & deals data
+  // Countdown tick (fires every second to re-render timers)
+  const [tick, setTick] = useState(0);
   useEffect(() => {
-    const syncData = async () => {
-      // Fetch deals for the current trust level
-      const deals = await GroupBuyingService.getActiveDeals(userStats.trust);
-      setAllDeals(deals);
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  // Load Deals & Auth State
+  useEffect(() => {
+    async function loadData() {
+      const dbDeals = await DealService.getActiveDeals();
+      setDeals(dbDeals);
+      
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      
+      setLoading(false);
+    }
+    loadData();
 
-      if (parsedItems.length > 0) {
-        const routed = await OrderService.previewRouting(parsedItems as any);
-        setRoutedItems(routed as any);
-        const savings = await GroupBuyingService.calculatePotentialSavings(parsedItems as any, userStats.trust);
-        setPotentialSavings(savings);
-      } else {
-        setRoutedItems([]);
-        setPotentialSavings(0);
-      }
+    // Listen to Auth Changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
     };
+  }, []);
+
+  const handleParticipateClick = (deal: any) => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+    setSelectedDeal({ id: deal.id, unit: deal.unit, title: deal.title[lang] });
+    setQty(1); // Default quantity
+  };
+
+  const handleModalConfirm = async () => {
+    if (!selectedDeal) return;
+    setIsSubmitting(true);
+
+    // Optimistic UI Update based on user qty
+    setDeals(prev => prev.map(d => {
+      if (d.id === selectedDeal.id) {
+        return { ...d, currentVol: d.currentVol + qty };
+      }
+      return d;
+    }));
+
+    // Perform real DB transaction
+    await DealService.joinDeal(selectedDeal.id, qty);
     
-    const timer = setTimeout(syncData, 500);
-    return () => clearTimeout(timer);
-  }, [parsedItems, userStats.trust]);
+    setIsSubmitting(false);
+    setSelectedDeal(null);
+  };
+
+  const handleGroupDealJoin = (dealId: string, itemName: string, quantity: string) => {
+    // Open modal with prefilled data for Alliance deal
+    const unit = quantity.replace(/[0-9.\s]/g, '') || 'lb';
+    const qtyNum = parseFloat(quantity) || 1;
+    setSelectedDeal({ id: dealId, unit, title: itemName });
+    setQty(qtyNum);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const filteredDeals = activeTab === "All" ? deals : deals.filter(d => d.category === activeTab);
 
   const t = {
     ko: {
-      title: "VANGUARD PROTOTYPE",
-      subtitle: "Vanguard Alliance 주문 시스템 v1.0",
-      statsPoints: "내 포인트",
-      statsTrust: "신뢰도",
-      inputTitle: "스마트 주문 입력",
-      inputPlaceholder: "주문 내용을 입력하세요 (예: Beef 50lb, Onions 100lb)",
-      button: "공급업체로 주문 전송 🚀",
-      buttonLoading: "연합 통신망 가동 중...",
-      previewTitle: "주문 분석 및 라우팅 (Vanguard Engine)",
-      routingLabel: "공급처",
-      success: "✅ 모든 주문서가 성공적으로 전송되었습니다!",
-      dispatchTitle: "발송 상태 (Fulfillment Hub)",
-      viewPdf: "PDF 보기",
-      savingsLabel: "총 절감 예상액",
-      currency: "$",
-      connecting: "🛰️ 연결 중...",
-      encrypting: "📑 암호화...",
-      sent: "✅ 전송됨",
-      footer: "© 2026 VANGUARD ALLIANCE - Intelligence Service Launch Edition",
+      navTitle: "Collective Deals",
+      hotDeals: "이번 주 핫딜 🔥",
+      hotDealsSub: "지금 참여하면 최대 24% 할인",
+      participate: "공동구매 참여하기",
+      navHome: "홈",
+      navHistory: "주문내역",
+      navProfile: user ? "프로필" : "로그인",
+      cats: {
+        All: "전체보기",
+        Meat: "정육/계란",
+        Veggie: "농산물",
+        Sauce: "소스/오일",
+      }
     },
     en: {
-      title: "VANGUARD PROTOTYPE",
-      subtitle: "Vanguard Alliance Order System v1.0",
-      statsPoints: "My Points",
-      statsTrust: "Trust Score",
-      inputTitle: "Smart Order Input",
-      inputPlaceholder: "Enter order details (e.g., Beef 50lb, Onions 100lb)",
-      button: "Dispatch Order to Supplier 🚀",
-      buttonLoading: "Syncing Alliance Network...",
-      previewTitle: "Order Analysis & Routing (Vanguard Engine)",
-      routingLabel: "Supplier",
-      success: "✅ All orders dispatched successfully!",
-      dispatchTitle: "Fulfillment Hub",
-      viewPdf: "View PDF",
-      savingsLabel: "Potential Savings",
-      currency: "$",
-      connecting: "🛰️ Connecting...",
-      encrypting: "📑 Encrypting...",
-      sent: "✅ SENT",
-      footer: "© 2026 VANGUARD ALLIANCE - Intelligence Service Launch Edition",
+      navTitle: "Collective Deals",
+      hotDeals: "This Week's Hot Deals 🔥",
+      hotDealsSub: "Join now for up to 24% off",
+      participate: "Join Collective Deal",
+      navHome: "Home",
+      navHistory: "History",
+      navProfile: user ? "Profile" : "Sign In",
+      cats: {
+        All: "View All",
+        Meat: "Meats & Eggs",
+        Veggie: "Vegetables",
+        Sauce: "Sauces & Oils",
+      }
     }
   }[lang];
 
-  const synergyHint = useMemo(() => {
-    if (routedItems.length === 0 || allDeals.length === 0) return null;
-    const hints: string[] = [];
-    
-    routedItems.forEach(item => {
-      const deal = allDeals.find(d => d.itemName.toLowerCase().includes(item.name.toLowerCase().split(' ')[0]));
-      if (deal) {
-        const myQty = parseFloat(item.quantity) || 0;
-        const totalWithMe = deal.currentVolume + myQty;
-        const currentProgress = totalWithMe / deal.targetVolume;
-        
-        const nextTier = deal.tiers.find((t: any) => t.threshold > currentProgress);
-        if (nextTier) {
-          const neededForNext = (nextTier.threshold * deal.targetVolume) - totalWithMe;
-          if (neededForNext > 0 && neededForNext <= (deal.targetVolume * 0.15)) {
-            hints.push(`${item.name}: ${neededForNext.toFixed(1)}lb만 더 추가하면 ${(nextTier.rate * 100).toFixed(0)}% 할인 구간에 진입합니다!`);
-          }
-        }
-      }
-    });
-    return hints;
-  }, [routedItems, allDeals]);
-
-  const handleDispatch = async () => {
-    if (routedItems.length === 0) return;
-    setIsLoading(true);
-    
-    // Initialize steps
-    const suppliers = Array.from(new Set(routedItems.map(i => i.supplier_name)));
-    const initialSteps: DispatchStep[] = suppliers.map(s => ({ supplierName: s || "Unknown", status: "idle" }));
-    setDispatchSteps(initialSteps);
-
-    // Run Cinematic Sequence
-    for (let i = 0; i < initialSteps.length; i++) {
-      const supplier = initialSteps[i].supplierName;
-      
-      // 1. Connecting
-      updateStep(supplier, "connecting");
-      await new Promise(r => setTimeout(r, 600));
-      
-      // 2. Encrypting
-      updateStep(supplier, "encrypting");
-      await new Promise(r => setTimeout(r, 800));
-      
-      // 3. Sent (Fetch the real result)
-      const supplierItems = routedItems.filter(item => item.supplier_name === supplier);
-      const { dispatchResults } = await OrderService.saveOrder(null, inputText, supplierItems as any);
-      
-      updateStep(supplier, "sent", dispatchResults[0]?.pdfBlob);
-      await new Promise(r => setTimeout(r, 300));
-    }
-
-    setIsLoading(false);
-    setInputText("");
-    setUserStats(prev => ({ ...prev, points: prev.points + 60, trust: Math.min(10, prev.trust + 0.05) }));
-  };
-
-  const updateStep = (supplier: string, status: DispatchStep["status"], pdfBlob?: Blob) => {
-    setDispatchSteps(prev => prev.map(s => s.supplierName === supplier ? { ...s, status, pdfBlob } : s));
-  };
-
-  const handleViewPdf = (blob: Blob) => {
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  };
-
   return (
-    <main className="container">
-      <div className="top-bar glass" style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <select 
-            className="branch-select"
-            value={activeBranch.id}
-            onChange={(e) => setActiveBranch(branches.find(b => b.id === e.target.value) || branches[0])}
+    <div className="container">
+      {/* Top Glass Nav */}
+      <nav className="top-nav">
+        <h1 className="top-nav-title display-txt">{t.navTitle}</h1>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <button 
+            onClick={() => setLang(lang === "ko" ? "en" : "ko")}
+            style={{ 
+              background: "var(--surface-variant)", 
+              border: "1px solid var(--outline-variant)", 
+              borderRadius: "var(--radius-md)", 
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "0.8rem",
+              color: "var(--on-surface-variant)"
+            }}
           >
-            {branches.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-          <button className="analytics-btn" onClick={() => setShowAnalytics(true)}>📊 Insight</button>
+            {lang === "ko" ? "EN" : "KR"}
+          </button>
+          <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--on-surface)" }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+           </svg>
+          </button>
         </div>
+      </nav>
 
-        <div className="stats-container" style={{ gap: "1.2rem" }}>
-          <div className="stat">
-            <span className="stat-label">{t.statsPoints}</span>
-            <span className="stat-value">{userStats.points.toLocaleString()}</span>
-          </div>
-          <div className="stat">
-            <span className="stat-label">{t.statsTrust}</span>
-            <span className="stat-value">⭐ {userStats.trust.toFixed(2)}</span>
-          </div>
-        </div>
-        
-        <div className="lang-switcher">
-          <button className={`lang-btn ${lang === "ko" ? "active" : ""}`} onClick={() => setLang("ko")}>KO</button>
-          <button className={`lang-btn ${lang === "en" ? "active" : ""}`} onClick={() => setLang("en")}>EN</button>
-        </div>
+      {/* Category Chips */}
+      <div className="chip-container mb-4">
+        {["All", "Meat", "Veggie", "Sauce"].map((cat) => (
+          <button 
+            key={cat} 
+            className={`chip ${activeTab === cat ? 'active' : ''}`}
+            onClick={() => setActiveTab(cat)}
+          >
+            {t.cats[cat as keyof typeof t.cats]}
+          </button>
+        ))}
       </div>
 
-      <header className="header">
-        <h1 className="title">{t.title}</h1>
-        <p className="subtitle">{t.subtitle}</p>
-      </header>
-
-      <GroupDeals 
-        lang={lang} 
-        onJoin={(item, qty) => setInputText(p => p ? `${p}, ${item} ${qty}` : `${item} ${qty}`)} 
-        parsedItems={parsedItems as any} 
-        trustScore={userStats.trust}
-      />
-
-      <div className="card glass foresight-card" style={{ borderLeft: "4px solid var(--accent)", padding: "0.8rem" }}>
-        <h2 className="section-title" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>
-          <span>🔮</span> {lang === "ko" ? "Vanguard AI 재고 예측" : "Vanguard AI Foresight"}
-        </h2>
-        <div style={{ display: "flex", gap: "1rem" }}>
-          <div className="prediction-item glass" style={{ flex: 1, padding: "0.5rem" }}>
-            <div style={{ fontSize: "0.6rem", opacity: 0.5 }}>Predicted Stock Out: 3 days</div>
-            <div style={{ fontSize: "0.8rem", fontWeight: 700 }}>Yellow Onions</div>
-            <button className="text-btn" style={{ marginTop: "0.4rem", width: "100%", fontSize: "0.6rem" }} onClick={() => setInputText("Yellow Onions 50lb")}>+ Add 50lb to Synergy</button>
-          </div>
-          <div className="prediction-item glass" style={{ flex: 1, padding: "0.5rem" }}>
-            <div style={{ fontSize: "0.6rem", opacity: 0.5 }}>Strategic Opportunity</div>
-            <div style={{ fontSize: "0.8rem", fontWeight: 700 }}>Wagyu Beef</div>
-            <button className="text-btn" style={{ marginTop: "0.4rem", width: "100%", fontSize: "0.6rem" }} onClick={() => setInputText("Wagyu Beef 20lb")}>+ Secure 12% Discount</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card glass" style={{ padding: "1rem" }}>
-        <h2 className="section-title" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}><span>📝</span> {t.inputTitle}</h2>
-        <textarea
-          className="textarea"
-          style={{ height: "80px", fontSize: "0.85rem", padding: "0.8rem" }}
-          placeholder={t.inputPlaceholder}
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-        />
+      {/* Feed Section */}
+      <div style={{ padding: "0 1.5rem" }}>
         
-        {synergyHint && synergyHint.length > 0 && (
-          <div className="synergy-hint-box" style={{ marginBottom: "0.8rem" }}>
-            {synergyHint.map((h, i) => (
-              <div key={i} className="hint-line">⚡ {h}</div>
-            ))}
-          </div>
-        )}
-        
-        {potentialSavings > 0 && (
-          <div className="success-badge" style={{ marginTop: "0.5rem", padding: "0.3rem", fontSize: "0.75rem", background: "rgba(0, 255, 136, 0.1)", border: "1px solid rgba(0, 255, 136, 0.2)" }}>
-            💰 {t.savingsLabel}: {t.currency}{potentialSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-        )}
-
-        <button 
-          className="button"
-          style={{ marginTop: "0.8rem", padding: "0.6rem" }}
-          onClick={handleDispatch}
-          disabled={routedItems.length === 0 || isLoading}
-        >
-          {isLoading ? t.buttonLoading : t.button}
-        </button>
-      </div>
-
-      {dispatchSteps.length > 0 && (
-        <div className="card glass info-card" style={{ borderLeft: "4px solid var(--success)" }}>
-          <h2 className="section-title" style={{ fontSize: "1rem" }}><span>📦</span> {t.dispatchTitle}</h2>
-          <div className="dispatch-list">
-            {dispatchSteps.map((step, i) => (
-              <div key={i} className="dispatch-item">
-                <span className="supplier-name">{step.supplierName}</span>
-                <span className={`dispatch-status-text ${step.status}`}>
-                  {step.status === "connecting" && t.connecting}
-                  {step.status === "encrypting" && t.encrypting}
-                  {step.status === "sent" && t.sent}
-                </span>
-                {step.pdfBlob && <button className="text-btn" onClick={() => handleViewPdf(step.pdfBlob!)}>{t.viewPdf}</button>}
-              </div>
-            ))}
-          </div>
-          {dispatchSteps.every(s => s.status === "sent") && <div className="success-badge" style={{ marginTop: "1rem" }}>{t.success}</div>}
+        {/* Alliance Syndicate Deals (Phase 2) */}
+        <div style={{ marginBottom: "2rem" }}>
+          <GroupDeals 
+            lang={lang} 
+            onJoin={handleGroupDealJoin}
+            trustScore={user ? 8.5 : 0} // High trust score to see Elite Deals when logged in
+          />
         </div>
-      )}
 
-      {routedItems.length > 0 && !isLoading && dispatchSteps.every(s => s.status !== "sent") && (
-        <div className="card glass">
-          <h2 className="section-title"><span>🔍</span> {t.previewTitle}</h2>
-          <div className="preview-list">
-            {routedItems.map((item) => (
-              <div key={item.id} className="preview-item">
-                <div className="item-main">
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-qty">{item.quantity}</span>
-                </div>
-                <div className="item-routing">
-                  <span className="routing-label">{t.routingLabel}:</span>
-                  <span className="supplier-name">{item.supplier_name || "..."}</span>
-                </div>
-              </div>
-            ))}
+        {/* Banner */}
+        <div className="section" style={{ background: "var(--surface-container-lowest)", marginBottom: "1.5rem", padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "var(--ambient-shadow)" }}>
+          <div>
+            <h2 className="headline-md" style={{ color: "var(--primary)" }}>{t.hotDeals}</h2>
+            <p className="body-md mt-4">{t.hotDealsSub}</p>
           </div>
+          <div style={{ fontSize: "2.5rem" }}>📦</div>
         </div>
-      )}
 
-      <OrderHistory lang={lang} />
-
-      {showAnalytics && (
-        <div className="detail-overlay glass" style={{ zIndex: 2000 }}>
-          <div className="detail-modal glass" style={{ maxWidth: "500px", border: "1px solid #ffd700", animation: "slideUp 0.3s ease-out" }}>
-            <div className="detail-header" style={{ borderBottom: "1px solid #ffd70033" }}>
-              <h3 style={{ color: "#ffd700" }}>🏆 {lang === "ko" ? "시너지 수익 보고서" : "Synergy Profit Report"}</h3>
-              <button onClick={() => setShowAnalytics(false)} className="text-btn">{lang === "ko" ? "닫기" : "Close"}</button>
-            </div>
-            <div className="analytics-body" style={{ padding: "1rem 0" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-                <div className="stat-box glass" style={{ padding: "1rem", textAlign: "center" }}>
-                  <div style={{ fontSize: "0.6rem", opacity: 0.5 }}>TOTAL SAVINGS</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--success)" }}>$4,285.50</div>
-                </div>
-                <div className="stat-box glass" style={{ padding: "1rem", textAlign: "center" }}>
-                  <div style={{ fontSize: "0.6rem", opacity: 0.5 }}>SYNERGY BOOST</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--accent)" }}>+22.4%</div>
+        {/* Product List */}
+        <div className="flex-col gap-4">
+          {filteredDeals.map((deal) => {
+            const countdown = formatCountdown(deal.expiresAt, lang);
+            return (
+            <div key={deal.id} className="product-card">
+              <div className="product-img-wrapper" style={{ height: "200px" }}>
+                <img src={deal.image} alt={deal.title[lang]} />
+                {/* Live Countdown Badge */}
+                <div style={{
+                  position: "absolute", top: "16px", left: "16px",
+                  background: countdown.urgent ? "var(--primary)" : "var(--surface-container-lowest)",
+                  color: countdown.urgent ? "var(--on-primary)" : "var(--on-surface)",
+                  padding: "4px 10px", borderRadius: "100px",
+                  fontSize: "0.75rem", fontWeight: 700,
+                  display: "flex", alignItems: "center", gap: "4px",
+                  animation: countdown.urgent ? "pulse 1.5s infinite" : "none"
+                }}>
+                  {countdown.urgent && <span>🔥</span>}
+                  {countdown.label}
                 </div>
               </div>
-              <div className="branch-savings">
-                <h4 style={{ fontSize: "0.8rem", marginBottom: "0.5rem", opacity: 0.6 }}>Savings by Branch</h4>
-                {branches.map(b => (
-                  <div key={b.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem", fontSize: "0.85rem" }}>
-                    <span style={{ opacity: 0.8 }}>{b.name}</span>
-                    <span style={{ fontWeight: 700 }}>${(Math.random() * 2000 + 500).toFixed(0)}</span>
+              <div className="card-content">
+                <h3 className="body-lg" style={{ fontWeight: 700, color: "var(--on-surface)" }}>{deal.title[lang]}</h3>
+                
+                <div className="flex items-center justify-between mt-4">
+                  <div>
+                    <span className="headline-md" style={{ fontWeight: 800 }}>${deal.price}</span>
+                    <span className="label-md" style={{ marginLeft: "4px", color: "var(--on-surface-variant)" }}>/ {deal.unit}</span>
                   </div>
-                ))}
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex justify-between label-md" style={{ color: deal.currentVol >= deal.targetVol * 0.8 ? "var(--primary)" : "var(--on-surface-variant)" }}>
+                    <span>{deal.statusText[lang]}</span>
+                    <span>{deal.currentVol} {deal.unit} / {deal.targetVol} {deal.unit}</span>
+                  </div>
+                  <div className="progress-bg">
+                    <div className="progress-fill" style={{ width: `${Math.min((deal.currentVol / deal.targetVol) * 100, 100)}%` }}></div>
+                  </div>
+                </div>
+
+                <button 
+                  className="btn-primary mt-4" 
+                  style={{ width: "100%" }}
+                  onClick={() => handleParticipateClick(deal)}
+                  disabled={deal.currentVol >= deal.targetVol}
+                >
+                  {deal.currentVol >= deal.targetVol ? (lang === "ko" ? "마감됨" : "Closed") : t.participate}
+                </button>
               </div>
             </div>
-            <p style={{ fontSize: "0.6rem", opacity: 0.4, textAlign: "center", marginTop: "1rem" }}>
-              Vanguard Intelligence Service: Optimized for Enterprise Scale.
+            );
+          })}
+        </div>
+      </div>
+
+
+      {/* Bottom Nav */}
+      <div className="bottom-nav">
+        <a href="#" className="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          {t.navHome}
+        </a>
+        <a href="/my-deals" className="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          {t.navHistory}
+        </a>
+        <a 
+          href={user ? "/profile" : "/login"} 
+          className="nav-item"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          {t.navProfile}
+        </a>
+      </div>
+
+      {/* Participation Modal */}
+      {selectedDeal && (
+        <div className="modal-overlay" style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.5)", zIndex: 1000,
+          display: "flex", justifyContent: "center", alignItems: "flex-end", // align-items flex-end for bottom sheet
+        }}>
+          <div className="mobile-bottom-sheet">
+            <h3 className="headline-md mb-2" style={{ color: "var(--on-surface)" }}>
+              {lang === "ko" ? "수량 입력" : "Enter Quantity"}
+            </h3>
+            <p className="body-md mb-4" style={{ color: "var(--on-surface-variant)" }}>
+              {selectedDeal.title}
             </p>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+              <input 
+                type="number" 
+                min="1"
+                value={qty}
+                onChange={(e) => setQty(Number(e.target.value) || 1)}
+                style={{
+                  flex: 1, padding: "12px", borderRadius: "0.5rem",
+                  border: "1px solid var(--outline-variant)",
+                  fontSize: "1.2rem", textAlign: "center"
+                }}
+              />
+              <span className="title-md" style={{ color: "var(--on-surface-variant)" }}>
+                {selectedDeal.unit}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button 
+                onClick={() => setSelectedDeal(null)}
+                style={{
+                  flex: 1, padding: "12px", borderRadius: "100px",
+                  background: "var(--surface-variant)", color: "var(--on-surface-variant)",
+                  border: "none", fontWeight: 700, cursor: "pointer"
+                }}
+              >
+                {lang === "ko" ? "취소" : "Cancel"}
+              </button>
+              <button 
+                onClick={handleModalConfirm}
+                disabled={isSubmitting}
+                className="btn-primary"
+                style={{ flex: 1, padding: "12px" }}
+              >
+                {isSubmitting 
+                  ? (lang === "ko" ? "처리중..." : "Processing...") 
+                  : (lang === "ko" ? "확인" : "Confirm")}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <footer style={{ textAlign: "center", marginTop: "3rem", opacity: 0.5, fontSize: "0.8rem" }}>{t.footer}</footer>
-
-      <style jsx>{`
-        .dispatch-status-text { font-weight: 800; font-size: 0.75rem; letter-spacing: 0.5px; }
-        .dispatch-status-text.connecting { color: var(--accent); animation: blink 1s infinite; }
-        .dispatch-status-text.encrypting { color: var(--primary); }
-        .dispatch-status-text.sent { color: var(--success); }
-        
-        @keyframes blink { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-      `}</style>
-    </main>
+    </div>
   );
 }
