@@ -15,6 +15,7 @@ export interface AllianceDeal {
   expiresIn: string;
   pricePerUnit: number;
   is_private?: boolean; // Elite Only
+  imageUrl?: string;
   tiers: DiscountTier[];
 }
 
@@ -41,6 +42,7 @@ export const GroupBuyingService = {
         expiresIn: this.formatExpiry(d.expires_at),
         pricePerUnit: d.price_per_unit,
         is_private: d.is_private,
+        imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300", // Fallback fresh produce image
         tiers: d.deal_tiers?.map((t: any) => ({ threshold: t.threshold_pct, rate: t.discount_rate })) || []
       }));
     } else {

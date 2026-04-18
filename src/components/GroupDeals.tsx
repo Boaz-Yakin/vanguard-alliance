@@ -100,19 +100,34 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
           const nextTier = deal.tiers.find(t => t.threshold > (totalVol / deal.targetVolume));
 
           return (
-            <div key={deal.id} className="deal-item" style={{ padding: "1.2rem", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div className="deal-info" style={{ marginBottom: "0.5rem" }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                    <span className="deal-name" style={{ fontSize: "1rem", fontWeight: 700, color: "var(--on-surface)" }}>{deal.itemName}</span>
-                    {deal.is_private && <span className="private-badge">{t.private}</span>}
-                  </div>
-                  <span style={{ fontSize: "0.65rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>{deal.supplierName}</span>
-                </div>
-                <div className="deal-badges mt-2">
-                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--secondary-container)", color: "var(--on-secondary-fixed)", padding: "4px 8px", borderRadius: "4px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
+            <div key={deal.id} className="deal-item" style={{ padding: "0", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              {/* Product Image Section */}
+              <div 
+                className="deal-image-container" 
+                style={{ 
+                  width: "100%", 
+                  height: "160px", 
+                  backgroundSize: "cover", 
+                  backgroundPosition: "center", 
+                  backgroundImage: `url(${deal.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300'})`,
+                  position: "relative"
+                }}
+              >
+                <div className="deal-badges" style={{ position: "absolute", bottom: "10px", left: "10px" }}>
+                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--secondary-container)", color: "var(--on-secondary-fixed)", padding: "4px 8px", borderRadius: "6px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
                 </div>
               </div>
+
+              <div style={{ padding: "1.2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div className="deal-info" style={{ marginBottom: "0.5rem" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+                      <span className="deal-name" style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--on-surface)" }}>{deal.itemName}</span>
+                      {deal.is_private && <span className="private-badge">{t.private}</span>}
+                    </div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>{deal.supplierName}</span>
+                  </div>
+                </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
                 <div className="progress-bar" style={{ height: "8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
@@ -139,6 +154,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
                 >
                   {t.join}
                 </button>
+              </div>
               </div>
             </div>
           );
