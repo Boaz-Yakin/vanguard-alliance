@@ -103,3 +103,8 @@ create policy "Users can insert their own profiles" on public.profiles for inser
 
 create policy "Users can view their own orders" on public.orders for select using (auth.uid() = user_id);
 create policy "Anonymous order insertion" on public.orders for insert with check (true);
+
+create policy "Users can view their own order items" on public.order_items for select using (
+  exists (select 1 from public.orders where id = order_items.order_id and user_id = auth.uid())
+);
+create policy "Anonymous order items insertion" on public.order_items for insert with check (true);
