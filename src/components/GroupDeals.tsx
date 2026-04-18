@@ -81,12 +81,12 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
   };
 
   return (
-    <div className="card glass deals-card" style={{ padding: "0.8rem", border: "1px solid var(--surface-border)" }}>
+    <div className="card deals-card" style={{ padding: "0.8rem", border: "1px solid var(--outline-variant)", borderRadius: "var(--radius-xl)", background: "transparent" }}>
       <div className="section-header" style={{ marginBottom: "0.8rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 className="section-title" style={{ color: "var(--accent)", fontSize: "0.9rem", margin: 0 }}>
+        <h2 className="section-title" style={{ color: "var(--primary)", fontSize: "1rem", margin: 0, fontWeight: 800 }}>
           <span>🛰️</span> {t.title}
         </h2>
-        <p style={{ fontSize: "0.65rem", opacity: 0.4 }}>{t.subtitle}</p>
+        <p style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)" }}>{t.subtitle}</p>
       </div>
 
       <div className="deals-grid">
@@ -100,42 +100,42 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
           const nextTier = deal.tiers.find(t => t.threshold > (totalVol / deal.targetVolume));
 
           return (
-            <div key={deal.id} className="deal-item glass" style={{ padding: "0.8rem" }}>
+            <div key={deal.id} className="deal-item" style={{ padding: "1.2rem", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="deal-info" style={{ marginBottom: "0.5rem" }}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                    <span className="deal-name" style={{ fontSize: "0.85rem" }}>{deal.itemName}</span>
+                    <span className="deal-name" style={{ fontSize: "1rem", fontWeight: 700, color: "var(--on-surface)" }}>{deal.itemName}</span>
                     {deal.is_private && <span className="private-badge">{t.private}</span>}
                   </div>
-                  <span style={{ fontSize: "0.55rem", opacity: 0.4 }}>{deal.supplierName}</span>
+                  <span style={{ fontSize: "0.65rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>{deal.supplierName}</span>
                 </div>
-                <div className="deal-badges">
-                  <span className="deal-discount" style={{ fontSize: "0.6rem" }}>{(currentRate * 100).toFixed(0)}% OFF</span>
+                <div className="deal-badges mt-2">
+                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--secondary-container)", color: "var(--on-secondary-fixed)", padding: "4px 8px", borderRadius: "4px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
                 </div>
               </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
-                <div className="progress-bar" style={{ height: "6px" }}>
-                  <div className="progress-fill" style={{ width: `${baseProgress}%` }}></div>
-                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%` }}></div>}
+                <div className="progress-bar" style={{ height: "8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
+                  <div className="progress-fill" style={{ width: `${baseProgress}%`, background: "var(--secondary-fixed)", height: "100%", position: "absolute", left: 0 }}></div>
+                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--primary)", height: "100%", position: "absolute" }}></div>}
                 </div>
-                <div className="progress-stats" style={{ fontSize: "0.6rem" }}>
-                  <span>{totalVol.toLocaleString()}/{deal.targetVolume.toLocaleString()} lb</span>
-                  <span style={{ color: myVol > 0 ? "var(--success)" : "inherit" }}>
+                <div className="progress-stats" style={{ fontSize: "0.7rem", color: "var(--on-surface-variant)", display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+                  <span style={{ fontWeight: 600 }}>{totalVol.toLocaleString()}/{deal.targetVolume.toLocaleString()} lb</span>
+                  <span style={{ color: myVol > 0 ? "var(--primary)" : "inherit", fontWeight: 700 }}>
                     {((totalVol / deal.targetVolume) * 100).toFixed(0)}%
                   </span>
                 </div>
               </div>
 
-              <div className="deal-footer" style={{ marginTop: "0.5rem", paddingTop: "0.5rem", height: "auto" }}>
-                <div className="deal-timer" style={{ fontSize: "0.6rem" }}>
+              <div className="deal-footer" style={{ marginTop: "0.5rem", paddingTop: "1rem", borderTop: "1px solid var(--outline-variant)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="deal-timer" style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", fontWeight: 600 }}>
                   <span className="timer-value">{deal.expiresIn}</span>
                 </div>
                 <button 
-                  className="text-btn join-btn"
+                  className="btn-primary join-btn"
                   onClick={() => handleJoin(deal.id)}
                   disabled={totalVol >= deal.targetVolume}
-                  style={{ fontSize: "0.65rem", padding: "0.2rem 0.5rem !important" }}
+                  style={{ fontSize: "0.85rem", padding: "0.4rem 1rem" }}
                 >
                   {t.join}
                 </button>
@@ -148,63 +148,21 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
       <style jsx>{`
         .deals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         @media (max-width: 600px) { .deals-grid { grid-template-columns: 1fr; } }
-
-        .deal-item {
-          padding: 1.2rem;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          transition: all 0.3s ease;
-        }
-
         .deal-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
-        .deal-discount { background: var(--success); color: #000; font-weight: 800; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 4px; transition: all 0.5s; }
-        .next-tier-badge { font-size: 0.55rem; opacity: 0.6; color: var(--accent); font-weight: 600; }
-
-        .progress-container { display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
-        .progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; position: relative; }
         
-        .progress-fill {
-          height: 100%;
-          background: rgba(255, 255, 255, 0.2);
-          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-          position: absolute;
-          left: 0;
-          z-index: 1;
+        button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          background: var(--surface-variant);
+          color: var(--on-surface-variant);
         }
-
-        .my-progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
-          box-shadow: 0 0 15px var(--primary-glow);
-          position: absolute;
-          z-index: 2;
-          transition: all 0.5s ease-out;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0% { opacity: 0.8; }
-          50% { opacity: 1; }
-          100% { opacity: 0.8; }
-        }
-
-        .tier-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.2); z-index: 3; }
-        .progress-stats { display: flex; justify-content: space-between; font-size: 0.7rem; opacity: 0.5; }
-        .deal-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05); }
-        .deal-timer { font-size: 0.7rem; }
-        .timer-label { opacity: 0.5; margin-right: 0.3rem; }
-        .timer-value { font-family: var(--font-mono); color: var(--accent); }
-        .join-btn { padding: 0.4rem 0.8rem !important; font-weight: 700; }
 
         .private-badge {
-          font-size: 0.5rem;
+          font-size: 0.55rem;
           background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
           color: #000;
           font-weight: 800;
-          padding: 0.1rem 0.3rem;
+          padding: 0.2rem 0.4rem;
           border-radius: 4px;
           letter-spacing: 0.5px;
           box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
