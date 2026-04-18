@@ -36,7 +36,17 @@ export default function ProfilePage() {
           .eq('id', user.id)
           .single();
 
-        if (data && !error) {
+        if (error || !data) {
+          // Profile doesn't exist! Auto-initialize it!
+          await supabase.from('profiles').upsert({
+            id: user.id,
+            email: user.email,
+            points: 0,
+            trust_score: 0,
+            level: 1,
+            updated_at: new Date().toISOString()
+          });
+        } else {
           setProfile({
             restaurant_name: data.restaurant_name || "",
             restaurant_address: data.restaurant_address || "",
@@ -48,7 +58,7 @@ export default function ProfilePage() {
           });
         }
       } catch (e) {
-        console.warn("VANGUARD: Expected warning if columns don't exist yet.");
+        console.warn("VANGUARD: Profile load error", e);
       }
 
       setLoading(false);

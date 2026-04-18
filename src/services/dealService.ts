@@ -108,15 +108,54 @@ export class DealService {
       const { data: { user } } = await supabase.auth.getUser();
 
       // 2. Real DB execution
-      const { data: currentDeal } = await supabase
+      let { data: currentDeal } = await supabase
         .from('deals')
         .select('current_volume, target_volume, item_name, price_per_unit, supplier_id, suppliers(name, email)')
         .eq('id', dealId)
         .single();
         
-      if (!currentDeal) return { success: false, error: "Deal not found" };
+      if (!currentDeal) {
+        // VANGUARD EXPERIMENTAL: Self-Healing Mock Deals
+        // If the database is missing seed data for the fallback deals, auto-inject them.
+        if (dealId === 'deal_onion_01' || dealId === 'deal_beef_01') {
+          console.log(`[Vanguard Engine] Auto-provisioning missing deal: ${dealId}`);
+          
+          // Ensure a fallback supplier exists
+          const defaultSupplierId = '11111111-1111-1111-1111-111111111111';
+          const { error: supError } = await supabase.from('suppliers').upsert({
+            id: defaultSupplierId,
+            name: "Vanguard Fallback Local Farm",
+            email: "partner@vanguard.local"
+          });
 
-      const newVolume = currentDeal.current_volume + additionalVolume;
+          // Insert the missing deal
+          const mockDealPayload = {
+            id: dealId,
+            item_name: dealId === 'deal_onion_01' ? '제주산 친환경 깐양파 특대용량' : '1++ 한우 양지 특수부위',
+            target_volume: dealId === 'deal_onion_01' ? 1000 : 100,
+            current_volume: 50,
+            price_per_unit: dealId === 'deal_onion_01' ? 1.45 : 24.00,
+            unit: 'lb',
+            supplier_id: defaultSupplierId,
+            expires_at: new Date(Date.now() + 86400000).toISOString() // 24 hours from now
+          };
+
+          await supabase.from('deals').upsert(mockDealPayload);
+          
+          // Re-fetch the newly minted deal
+          const { data: newDeal } = await supabase
+             .from('deals')
+             .select('current_volume, target_volume, item_name, price_per_unit, supplier_id, suppliers(name, email)')
+             .eq('id', dealId)
+             .single();
+             
+          currentDeal = newDeal;
+        }
+        
+        if (!currentDeal) return { success: false, error: "Deal not found and could not be provisioned." };
+      }
+
+      const newVolume = Number(currentDeal.current_volume) + additionalVolume;
       const totalAmount = additionalVolume * currentDeal.price_per_unit;
 
       const { data, error } = await supabase
@@ -143,14 +182,24 @@ export class DealService {
           .select('id')
           .single();
         
-        if (!orderError && orderData) {
-          await supabase.from('order_items').insert({
+        if (orderError) {
+          console.error("VANGUARD Engine CRITICAL ERROR: Order insertion failed", orderError);
+          return { success: false, error: orderError.message || JSON.stringify(orderError) };
+        }
+
+        if (orderData) {
+          const { error: itemsError } = await supabase.from('order_items').insert({
             order_id: orderData.id,
             supplier_id: currentDeal.supplier_id,
             product_name: currentDeal.item_name,
             quantity: String(additionalVolume),
             price: currentDeal.price_per_unit
           });
+          
+          if (itemsError) {
+             console.error("VANGUARD Engine CRITICAL ERROR: Order Items insertion failed", itemsError);
+             return { success: false, error: itemsError.message || JSON.stringify(itemsError) };
+          }
           
           // Apply Trust Engine rewards
           await LoyaltyService.grantTransactionReward(user.id, totalAmount);
