@@ -154,12 +154,12 @@ export default function CommanderPage() {
 
   return (
     <div className="container" style={{ padding: "2rem" }}>
-      <header className="flex justify-between items-start mb-8">
+      <header className="flex justify-between items-start mb-8 commander-header">
         <div>
           <h1 className="display-lg text-primary">VANGUARD COMMAND</h1>
           <p className="body-lg">{editingId ? "작전을 수정 중입니다 (ID: " + editingId.slice(0,8) + ")" : "새로운 공동구매 작전을 개시하십시오."}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 commander-header-buttons">
           {editingId && (
             <button 
               type="button"
@@ -439,12 +439,22 @@ export default function CommanderPage() {
         }
         .commander-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
           gap: 1rem;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
           .commander-grid {
             grid-template-columns: 1fr;
+          }
+          .commander-header {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 1.5rem;
+          }
+          .commander-header-buttons {
+             width: 100%;
+             flex-direction: row;
+             justify-content: flex-start;
           }
         }
       `}</style>
