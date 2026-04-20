@@ -207,7 +207,7 @@ export default function CommanderPage() {
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="commander-grid">
             <div className="flex-col gap-2">
               <label className="label-md">카테고리</label>
               <select 
@@ -256,7 +256,7 @@ export default function CommanderPage() {
         <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
           <h2 className="headline-md mb-4">전략적 가격 및 물량</h2>
           
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="mb-4">
+          <div className="commander-grid mb-4">
             <div className="flex-col gap-2">
               <label className="label-md">단가 ($)</label>
               <input 
@@ -279,7 +279,7 @@ export default function CommanderPage() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className="commander-grid">
             <div className="flex-col gap-2">
               <label className="label-md">목표 물량</label>
               <input 
@@ -429,10 +429,23 @@ export default function CommanderPage() {
           background: var(--surface);
           font-size: 1rem;
           color: var(--on-surface);
+          width: 100%;
+          box-sizing: border-box;
+          max-width: 100%;
         }
         .commander-input:focus {
           outline: 2px solid var(--primary);
           border-color: transparent;
+        }
+        .commander-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 1rem;
+        }
+        @media (max-width: 600px) {
+          .commander-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </div>
