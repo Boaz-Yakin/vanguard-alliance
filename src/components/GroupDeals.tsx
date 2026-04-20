@@ -8,9 +8,10 @@ interface GroupDealsProps {
   onJoin: (dealId: string, itemName: string, quantity: string) => void;
   parsedItems?: { name: string, quantity: string }[];
   trustScore?: number;
+  refreshKey?: number;
 }
 
-export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: GroupDealsProps) => {
+export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, refreshKey = 0 }: GroupDealsProps) => {
   const [deals, setDeals] = useState<AllianceDeal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +55,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [trustScore]);
+  }, [trustScore, refreshKey]);
 
   /**
    * Calculate User's current contribution from textarea
@@ -130,11 +131,31 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0 }: G
                 </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
-                <div className="progress-bar" style={{ height: "8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
-                  <div className="progress-fill" style={{ width: `${baseProgress}%`, background: "var(--secondary-fixed)", height: "100%", position: "absolute", left: 0 }}></div>
-                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--primary)", height: "100%", position: "absolute" }}></div>}
+                <div className="progress-bar" style={{ height: "12px", background: "rgba(0,0,0,0.05)", borderRadius: "6px", position: "relative", marginTop: "20px", overflow: "visible" }}>
+                  <div className="progress-fill" style={{ width: `${baseProgress}%`, background: "var(--secondary-fixed)", height: "100%", position: "absolute", left: 0, zIndex: 1, borderRadius: "6px" }}></div>
+                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--primary)", height: "100%", position: "absolute", zIndex: 1 }}></div>}
+                  
+                  {/* High-Contrast Tier Dividers (Separated Top/Bottom) */}
+                  {deal.tiers.map((tier, idx) => {
+                    const pos = tier.threshold * 100;
+                    const isReached = (totalVol / deal.targetVolume) >= tier.threshold;
+                    return (
+                      <div key={idx} style={{ position: "absolute", left: `${pos}%`, top: 0, bottom: 0, width: "3px", background: isReached ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.15)", zIndex: 3, pointerEvents: "none" }}>
+                        {/* Discount Label - MOVED TO TOP */}
+                        <div style={{ 
+                          position: "absolute", left: 0, top: "-18px", transform: "translateX(-50%)",
+                          fontSize: "0.65rem", fontWeight: 900, color: isReached ? "var(--primary)" : "var(--on-surface-variant)",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {(tier.rate * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="progress-stats" style={{ fontSize: "0.7rem", color: "var(--on-surface-variant)", display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+                
+                {/* Volume Stats Summary - ALREADY BELOW */}
+                <div className="progress-stats" style={{ fontSize: "0.7rem", color: "var(--on-surface-variant)", display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
                   <span style={{ fontWeight: 600 }}>{totalVol.toLocaleString()}/{deal.targetVolume.toLocaleString()} lb</span>
                   <span style={{ color: myVol > 0 ? "var(--primary)" : "inherit", fontWeight: 700 }}>
                     {((totalVol / deal.targetVolume) * 100).toFixed(0)}%

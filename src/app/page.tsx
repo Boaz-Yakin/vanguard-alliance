@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { DealService } from "@/services/dealService";
 import { supabase } from "@/lib/supabaseClient";
 import { GroupDeals } from "@/components/GroupDeals";
+import { GroupBuyingService } from "@/services/groupBuyingService";
 
 // Helper: format ms remaining into a human-readable countdown
 function formatCountdown(expiresAt: string | undefined, lang: "ko" | "en"): { label: string; urgent: boolean } {
@@ -32,6 +33,7 @@ export default function Home() {
   const [selectedDeal, setSelectedDeal] = useState<{id: string, unit: string, title: string} | null>(null);
   const [qty, setQty] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Countdown tick (fires every second to re-render timers)
   const [tick, setTick] = useState(0);
@@ -86,6 +88,7 @@ export default function Home() {
     // Perform real DB transaction
     await DealService.joinDeal(selectedDeal.id, qty);
     
+    setRefreshKey(prev => prev + 1); // Trigger GroupDeals refresh
     setIsSubmitting(false);
     setSelectedDeal(null);
   };
@@ -118,7 +121,8 @@ export default function Home() {
         Meat: "정육/계란",
         Veggie: "농산물",
         Sauce: "소스/오일",
-      }
+      },
+      adminNav: "관리화면"
     },
     en: {
       navTitle: "Collective Deals",
@@ -133,7 +137,8 @@ export default function Home() {
         Meat: "Meats & Eggs",
         Veggie: "Vegetables",
         Sauce: "Sauces & Oils",
-      }
+      },
+      adminNav: "COMMAND"
     }
   }[lang];
 
@@ -158,6 +163,23 @@ export default function Home() {
           >
             {lang === "ko" ? "EN" : "KR"}
           </button>
+          {user && user.email === 'boaznyakin@gmail.com' && (
+            <button 
+              onClick={() => window.location.href = "/commander"} 
+              style={{ 
+                background: "var(--primary-container)", 
+                border: "1px solid var(--primary)", 
+                borderRadius: "var(--radius-md)", 
+                padding: "4px 12px",
+                cursor: "pointer",
+                fontWeight: "700",
+                fontSize: "0.8rem",
+                color: "var(--on-primary-container)"
+              }}
+            >
+              {t.adminNav}
+            </button>
+          )}
           <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--on-surface)" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -188,7 +210,8 @@ export default function Home() {
           <GroupDeals 
             lang={lang} 
             onJoin={handleGroupDealJoin}
-            trustScore={user ? 8.5 : 0} // High trust score to see Elite Deals when logged in
+            trustScore={user ? 8.5 : 0} 
+            refreshKey={refreshKey}
           />
         </div>
 
@@ -222,6 +245,18 @@ export default function Home() {
                   {countdown.urgent && <span>🔥</span>}
                   {countdown.label}
                 </div>
+
+                {/* Discount Badge */}
+                <div style={{
+                  position: "absolute", top: "16px", right: "16px",
+                  background: "var(--secondary-container)",
+                  color: "var(--on-secondary-fixed)",
+                  padding: "4px 10px", borderRadius: "100px",
+                  fontSize: "0.85rem", fontWeight: 800,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                }}>
+                  -{(GroupBuyingService.getCurrentDiscountRate(deal as any) * 100).toFixed(0)}%
+                </div>
               </div>
               <div className="card-content">
                 <h3 className="body-lg" style={{ fontWeight: 700, color: "var(--on-surface)" }}>{deal.title[lang]}</h3>
@@ -234,12 +269,32 @@ export default function Home() {
                 </div>
 
                 <div className="mt-4">
-                  <div className="flex justify-between label-md" style={{ color: deal.currentVol >= deal.targetVol * 0.8 ? "var(--primary)" : "var(--on-surface-variant)" }}>
+                  <div className="progress-bg" style={{ position: "relative", overflow: "visible", marginTop: "24px", marginBottom: "20px" }}>
+                    <div className="progress-fill" style={{ width: `${Math.min((deal.currentVol / deal.targetVol) * 100, 100)}%`, zIndex: 1 }}></div>
+                    
+                    {/* Integrated Tier Indicators (Separated Top/Bottom) */}
+                    {deal.tiers?.map((tier: any, idx: number) => {
+                      const pos = tier.threshold * 100;
+                      const isReached = (deal.currentVol / deal.targetVol) >= tier.threshold;
+                      return (
+                        <div key={idx} style={{ position: "absolute", left: `${pos}%`, top: 0, bottom: 0, width: "3px", background: isReached ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.15)", zIndex: 3, pointerEvents: "none" }}>
+                          {/* Discount Label - MOVED TO TOP */}
+                          <div style={{ 
+                            position: "absolute", left: 0, top: "-20px", transform: "translateX(-50%)",
+                            fontSize: "0.7rem", fontWeight: 900, color: isReached ? "var(--primary)" : "var(--on-surface-variant)",
+                            whiteSpace: "nowrap"
+                          }}>
+                            {(tier.rate * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Volume Stats - KEPT AT BOTTOM */}
+                  <div className="flex justify-between label-md mt-2" style={{ color: deal.currentVol >= deal.targetVol * 0.8 ? "var(--primary)" : "var(--on-surface-variant)" }}>
                     <span>{deal.statusText[lang]}</span>
                     <span>{deal.currentVol} {deal.unit} / {deal.targetVol} {deal.unit}</span>
-                  </div>
-                  <div className="progress-bg">
-                    <div className="progress-fill" style={{ width: `${Math.min((deal.currentVol / deal.targetVol) * 100, 100)}%` }}></div>
                   </div>
                 </div>
 

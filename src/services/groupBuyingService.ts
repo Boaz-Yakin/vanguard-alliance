@@ -27,7 +27,8 @@ export const GroupBuyingService = {
     // 1. Attempt to fetch from real Supabase 'deals' table
     const { data: dbDeals, error } = await supabase
       .from('deals')
-      .select('*, suppliers(name), deal_tiers(*)');
+      .select('*, suppliers(name), deal_tiers(*)')
+      .eq('is_private', true);
 
     let deals: AllianceDeal[] = [];
 
@@ -111,6 +112,8 @@ export const GroupBuyingService = {
   },
 
   getCurrentDiscountRate(deal: AllianceDeal): number {
+    if (!deal.tiers || !Array.isArray(deal.tiers)) return 0;
+    
     const progress = deal.currentVolume / deal.targetVolume;
     let applicableRate = 0;
     const sortedTiers = [...deal.tiers].sort((a,b) => a.threshold - b.threshold);

@@ -14,6 +14,7 @@ export const MOCK_DEALS = [
     targetVol: 100,
     timeRemaining: { ko: "12시간 남음", en: "12 hours left" },
     statusText: { ko: "목표 85% 달성 (성사 임박!)", en: "85% Reached (Closing Soon!)" },
+    tiers: [{ threshold: 0.8, rate: 0.1 }]
   },
   {
     id: "d2",
@@ -26,6 +27,7 @@ export const MOCK_DEALS = [
     targetVol: 1000,
     timeRemaining: { ko: "2일 남음", en: "2 days left" },
     statusText: { ko: "초과 달성 시 5% 추가 할인 적용", en: "Extra 5% off if target exceeded" },
+    tiers: [{ threshold: 1.0, rate: 0.05 }]
   },
   {
     id: "d3",
@@ -38,10 +40,79 @@ export const MOCK_DEALS = [
     targetVol: 50,
     timeRemaining: { ko: "5일 남음", en: "5 days left" },
     statusText: { ko: "신규 진행중", en: "Newly added" },
+    tiers: []
   }
 ];
 
+export interface DealTierInput {
+  threshold_pct: number;
+  discount_rate: number;
+}
+
+export interface CreateDealInput {
+  item_name: string;
+  item_name_en: string;
+  category: string;
+  price_per_unit: number;
+  unit: string;
+  image_url: string;
+  target_volume: number;
+  supplier_id: string;
+  expires_at: string;
+  is_private?: boolean;
+  tiers: DealTierInput[];
+}
+
 export class DealService {
+  /**
+   * Strategically inserts a new alliance deal into the system.
+   */
+  static async createDeal(input: CreateDealInput): Promise<{ success: boolean; data?: any; error?: any }> {
+    try {
+      // 1. Insert the main deal
+      const { data: deal, error: dealError } = await supabase
+        .from('deals')
+        .insert({
+          item_name: input.item_name,
+          item_name_en: input.item_name_en,
+          category: input.category,
+          price_per_unit: input.price_per_unit,
+          unit: input.unit,
+          image_url: input.image_url,
+          target_volume: input.target_volume,
+          supplier_id: input.supplier_id,
+          expires_at: input.expires_at,
+          is_private: input.is_private || false,
+          current_volume: 0,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (dealError) throw dealError;
+
+      // 2. Insert tiers if provided
+      if (input.tiers && input.tiers.length > 0) {
+        const tiersWithId = input.tiers.map(t => ({
+          deal_id: deal.id,
+          threshold_pct: t.threshold_pct,
+          discount_rate: t.discount_rate
+        }));
+
+        const { error: tiersError } = await supabase
+          .from('deal_tiers')
+          .insert(tiersWithId);
+
+        if (tiersError) throw tiersError;
+      }
+
+      return { success: true, data: deal };
+    } catch (e) {
+      console.error("VANGUARD: Failed to create strategic deal.", e);
+      return { success: false, error: e };
+    }
+  }
+
   /**
    * Fetches the active group deals from Supabase.
    * If the connection fails or table is empty, falls back to MOCK_DEALS.
@@ -50,8 +121,9 @@ export class DealService {
     try {
       const { data, error } = await supabase
         .from('deals')
-        .select('*')
+        .select('*, deal_tiers(*)')
         .eq('status', 'active')
+        .eq('is_private', false)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,8 +136,6 @@ export class DealService {
         return MOCK_DEALS;
       }
 
-      // Map DB structure to frontend structure. 
-      // Assuming DB has: item_name, item_name_en, price_per_unit, unit, current_volume, target_volume
       return data.map((deal: any) => ({
         id: deal.id,
         title: { 
@@ -85,12 +155,83 @@ export class DealService {
         statusText: { 
           ko: "참여 가능", 
           en: "Available" 
-        }
+        },
+        is_private: deal.is_private,
+        tiers: deal.deal_tiers?.map((t: any) => ({
+          threshold: t.threshold_pct,
+          rate: t.discount_rate
+        })) || []
       }));
 
     } catch (e) {
-      console.warn("VANGUARD: Expected DB connection error in Mock Mode. Falling back to MOCK_DEALS.");
+      console.warn("VANGUARD: Expected DB connection error. Falling back to MOCK_DEALS.");
       return MOCK_DEALS;
+    }
+  }
+
+  /**
+   * Admin only: Fetches ALL deals including private ones.
+   */
+  static async getAllDeals(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*, suppliers(name), deal_tiers(*)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error("VANGUARD: Failed to fetch all deals for admin.", e);
+      return [];
+    }
+  }
+
+  /**
+   * Admin only: Updates an existing deal.
+   */
+  static async updateDeal(dealId: string, input: CreateDealInput): Promise<{ success: boolean; error?: any }> {
+    try {
+      // 1. Update main deal
+      const { error: dealError } = await supabase
+        .from('deals')
+        .update({
+          item_name: input.item_name,
+          item_name_en: input.item_name_en,
+          category: input.category,
+          price_per_unit: input.price_per_unit,
+          unit: input.unit,
+          image_url: input.image_url,
+          target_volume: input.target_volume,
+          supplier_id: input.supplier_id,
+          expires_at: input.expires_at,
+          is_private: input.is_private
+        })
+        .eq('id', dealId);
+
+      if (dealError) throw dealError;
+
+      // 2. Refresh tiers (delete and re-insert for simplicity in MVP)
+      await supabase.from('deal_tiers').delete().eq('deal_id', dealId);
+
+      if (input.tiers && input.tiers.length > 0) {
+        const tiersWithId = input.tiers.map(t => ({
+          deal_id: dealId,
+          threshold_pct: t.threshold_pct,
+          discount_rate: t.discount_rate
+        }));
+
+        const { error: tiersError } = await supabase
+          .from('deal_tiers')
+          .insert(tiersWithId);
+
+        if (tiersError) throw tiersError;
+      }
+
+      return { success: true };
+    } catch (e) {
+      console.error("VANGUARD: Failed to update deal.", e);
+      return { success: false, error: e };
     }
   }
 
