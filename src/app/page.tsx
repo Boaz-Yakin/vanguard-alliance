@@ -109,7 +109,7 @@ export default function Home() {
 
   const t = {
     ko: {
-      navTitle: "Collective Deals",
+      navTitle: "Collective Deals [SYNC-TEST]",
       hotDeals: "이번 주 핫딜 🔥",
       hotDealsSub: "지금 참여하면 최대 24% 할인",
       participate: "공동구매 참여하기",
