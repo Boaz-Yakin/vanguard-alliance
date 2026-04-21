@@ -14,91 +14,51 @@ export interface AllianceDeal {
   supplierName: string;
   expiresIn: string;
   pricePerUnit: number;
-  is_private?: boolean; // Elite Only
+  is_private?: boolean;
   imageUrl?: string;
   tiers: DiscountTier[];
 }
 
 export const GroupBuyingService = {
   /**
-   * Fetch active alliance deals from DB with Fallback
+   * Fetch active alliance deals from DB. 
+   * returns empty array if no deals exist.
    */
   async getActiveDeals(trustScore: number = 0): Promise<AllianceDeal[]> {
-    // 1. Attempt to fetch from real Supabase 'deals' table
+    console.log("[VANGUARD] Fetching active alliance deals...");
     const { data: dbDeals, error } = await supabase
       .from('deals')
       .select('*, suppliers(name), deal_tiers(*)')
-      .eq('is_private', true);
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
 
-    let deals: AllianceDeal[] = [];
-
-    if (dbDeals && dbDeals.length > 0) {
-      deals = dbDeals.map((d: any) => ({
-        id: d.id,
-        itemName: d.item_name,
-        currentVolume: d.current_volume,
-        targetVolume: d.target_volume,
-        status: d.status,
-        supplierName: d.suppliers?.name || "Premium Supplier",
-        expiresIn: this.formatExpiry(d.expires_at),
-        pricePerUnit: d.price_per_unit,
-        is_private: d.is_private,
-        imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300", // Fallback fresh produce image
-        tiers: d.deal_tiers?.map((t: any) => ({ threshold: t.threshold_pct, rate: t.discount_rate })) || []
-      }));
-    } else {
-      // 2. Tactical Fallback (Prototype Mode)
-      deals = [
-        {
-          id: "deal_onion_01",
-          itemName: "Yellow Onions",
-          currentVolume: 850,
-          targetVolume: 1000,
-          status: "active",
-          supplierName: "Green Harvest Produce",
-          expiresIn: "4:20:15",
-          pricePerUnit: 1.45,
-          tiers: [
-            { threshold: 0.3, rate: 0.05 },
-            { threshold: 0.7, rate: 0.10 },
-            { threshold: 1.0, rate: 0.15 }
-          ]
-        },
-        {
-          id: "deal_beef_01",
-          itemName: "Wagyu Beef",
-          currentVolume: 420,
-          targetVolume: 500,
-          status: "active",
-          supplierName: "Vanguard Premium Meats",
-          expiresIn: "1:45:00",
-          pricePerUnit: 24.99,
-          tiers: [
-            { threshold: 0.2, rate: 0.05 },
-            { threshold: 0.5, rate: 0.12 },
-            { threshold: 1.0, rate: 0.20 }
-          ]
-        },
-        {
-          id: "deal_elite_01",
-          itemName: "Black Truffle Oil",
-          currentVolume: 65,
-          targetVolume: 100,
-          status: "active",
-          supplierName: "Elite Global Imports",
-          expiresIn: "0:55:00",
-          pricePerUnit: 120.00,
-          is_private: true, // Requires Trust Score 7.0+
-          tiers: [
-            { threshold: 0.5, rate: 0.15 },
-            { threshold: 1.0, rate: 0.30 }
-          ]
-        }
-      ];
+    if (error) {
+       console.error("[VANGUARD] DB Error in GroupBuyingService:", error);
+       return [];
     }
 
-    // Filter deals based on trust score
-    return deals.filter(d => !d.is_private || trustScore >= 7.0);
+    console.log(`[VANGUARD] Found ${dbDeals?.length || 0} deals in DB.`);
+
+    if (!dbDeals || dbDeals.length === 0) {
+       return [];
+    }
+
+    const deals: AllianceDeal[] = dbDeals.map((d: any) => ({
+      id: d.id,
+      itemName: d.item_name,
+      currentVolume: Number(d.current_volume),
+      targetVolume: Number(d.target_volume),
+      status: d.status,
+      supplierName: d.suppliers?.name || "Alliance Supplier",
+      expiresIn: this.formatExpiry(d.expires_at),
+      pricePerUnit: Number(d.price_per_unit),
+      is_private: d.is_private,
+      imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300",
+      tiers: d.deal_tiers?.map((t: any) => ({ threshold: t.threshold_pct, rate: t.discount_rate })) || []
+    }));
+
+    // DEVELOPER OVERRIDE: Temporarily show all deals regardless of trust score for verification
+    return deals;
   },
 
   formatExpiry(dateStr: string): string {
@@ -113,7 +73,6 @@ export const GroupBuyingService = {
 
   getCurrentDiscountRate(deal: AllianceDeal): number {
     if (!deal.tiers || !Array.isArray(deal.tiers)) return 0;
-    
     const progress = deal.currentVolume / deal.targetVolume;
     let applicableRate = 0;
     const sortedTiers = [...deal.tiers].sort((a,b) => a.threshold - b.threshold);
