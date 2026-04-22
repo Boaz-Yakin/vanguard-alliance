@@ -43,18 +43,23 @@ export default function Home() {
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // Load Deals & Auth State
+  // Load Deals
   useEffect(() => {
-    async function loadData() {
+    async function loadDeals() {
       const dbDeals = await DealService.getActiveDeals();
       setDeals(dbDeals);
-      
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-      
       setLoading(false);
     }
-    loadData();
+    loadDeals();
+  }, [refreshKey]);
+
+  // Auth State (Run once)
+  useEffect(() => {
+    async function checkUser() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    }
+    checkUser();
 
     // Listen to Auth Changes
     const { data: authListener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
