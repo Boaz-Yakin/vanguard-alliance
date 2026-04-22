@@ -149,6 +149,12 @@ export default function CommanderPage() {
     const { success, error } = await DealService.deleteDeal(dealId);
     if (success) {
       alert("작전이 성공적으로 폐기되었습니다.");
+      // Optimistically remove from UI
+      setExistingDeals(prev => prev.filter(d => d.id !== dealId));
+      if (editingId === dealId) {
+        setEditingId(null);
+        setForm(initialForm);
+      }
       setRefreshKey(prev => prev + 1);
     } else {
       alert(`폐기 실패: ${error}`);
