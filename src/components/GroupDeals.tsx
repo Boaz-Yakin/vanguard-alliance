@@ -44,6 +44,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, use
   useEffect(() => {
     const fetchDeals = async () => {
       const data = await GroupBuyingService.getActiveDeals(trustScore);
+      console.log(`[GroupDeals] Fetched ${data.length} deals. userLevel=${userLevel} trustScore=${trustScore}`);
       setDeals(data);
       setLoading(false);
     };

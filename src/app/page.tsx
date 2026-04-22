@@ -63,7 +63,7 @@ export default function Home() {
       if (data.user) {
         // Admin override: always grant max privileges
         if (data.user.email === 'boaznyakin@gmail.com') {
-          setTrustScore(10);
+          setTrustScore(9.99);
           setUserLevel(5);
         } else {
           const profile = await LoyaltyService.getProfile(data.user.id);
@@ -85,7 +85,7 @@ export default function Home() {
       if (session?.user) {
         // Admin override: always grant max privileges
         if (session.user.email === 'boaznyakin@gmail.com') {
-          setTrustScore(10);
+          setTrustScore(9.99);
           setUserLevel(5);
         } else {
           const profile = await LoyaltyService.getProfile(session.user.id);
