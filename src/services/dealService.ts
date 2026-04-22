@@ -135,6 +135,7 @@ export class DealService {
       const { data, error } = await supabase
         .from('deals')
         .select('*, suppliers(name), deal_tiers(*)')
+        .neq('id', '00000000-0000-0000-0000-000000000000') // Dummy filter for cache busting
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -155,7 +155,10 @@ export default function CommanderPage() {
         setEditingId(null);
         setForm(initialForm);
       }
-      setRefreshKey(prev => prev + 1);
+      // Wait for DB to settle before refetching
+      setTimeout(() => {
+        setRefreshKey(prev => prev + 1);
+      }, 800);
     } else {
       alert(`폐기 실패: ${error}`);
     }
