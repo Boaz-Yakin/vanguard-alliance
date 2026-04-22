@@ -136,9 +136,14 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
-                <div className="progress-bar" style={{ height: "12px", background: "rgba(0,0,0,0.05)", borderRadius: "6px", position: "relative", marginTop: "20px", overflow: "visible" }}>
-                  <div className="progress-fill" style={{ width: `${baseProgress}%`, background: "var(--secondary-fixed)", height: "100%", position: "absolute", left: 0, zIndex: 1, borderRadius: "6px" }}></div>
-                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--primary)", height: "100%", position: "absolute", zIndex: 1 }}></div>}
+                <div className="progress-bar" style={{ height: "14px", background: "var(--surface-container-high)", borderRadius: "7px", position: "relative", marginTop: "20px", overflow: "visible", border: "1px solid var(--outline-variant)" }}>
+                  <div className="progress-fill" style={{ 
+                    width: `${baseProgress}%`, 
+                    background: `linear-gradient(90deg, var(--primary) 0%, ${baseProgress > 80 ? 'var(--tertiary)' : 'var(--primary-fixed-dim)'} 100%)`, 
+                    height: "100%", position: "absolute", left: 0, zIndex: 1, borderRadius: "6px",
+                    transition: "width 0.5s ease-out, background 0.5s ease"
+                  }}></div>
+                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--secondary)", height: "100%", position: "absolute", zIndex: 1 }}></div>}
                   
                   {/* High-Contrast Tier Dividers (Separated Top/Bottom) */}
                   {deal.tiers.map((tier, idx) => {
