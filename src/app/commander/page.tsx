@@ -410,12 +410,19 @@ export default function CommanderPage() {
             </div>
 
             <div className="flex-col gap-2">
-              <label className="label-md">또는 파일 업로드</label>
+              <label className="label-md">또는 파일 업로드 (PC/카메라)</label>
               <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                <input type="file" onChange={handleImageUpload} accept="image/*" className="body-md" style={{ flex: 1 }} />
+                <input 
+                  type="file" 
+                  onChange={handleImageUpload} 
+                  accept="image/*" 
+                  capture="environment"
+                  className="body-md" 
+                  style={{ flex: 1 }} 
+                />
                 {loading && <span className="label-sm" style={{ color: "var(--primary)" }}>업로드 중...</span>}
               </div>
-              <p className="label-sm" style={{ opacity: 0.6 }}>* 이미지 업로드 시 WebP로 자동 최적화됩니다.</p>
+              <p className="label-sm" style={{ opacity: 0.6 }}>* 카메라로 직접 촬영하거나 PC 파일을 선택할 수 있습니다.</p>
             </div>
           </div>
         </section>
