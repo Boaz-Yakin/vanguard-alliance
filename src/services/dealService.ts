@@ -164,12 +164,21 @@ export class DealService {
         .delete()
         .eq('id', dealId);
       
-      if (dealError) throw dealError;
+      if (dealError) {
+        // Fallback: If hard delete fails (e.g. foreign key constraint), mark as archived
+        const { error: updateError } = await supabase
+          .from('deals')
+          .update({ status: 'archived' })
+          .eq('id', dealId);
+        
+        if (updateError) throw updateError;
+        return { success: true, method: 'archived' };
+      }
 
-      return { success: true };
-    } catch (e) {
+      return { success: true, method: 'deleted' };
+    } catch (e: any) {
       console.error("VANGUARD: Failed to terminate deal.", e);
-      return { success: false, error: e };
+      return { success: false, error: e?.message || "Unknown error" };
     }
   }
 

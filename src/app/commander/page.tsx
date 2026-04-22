@@ -40,7 +40,7 @@ export default function CommanderPage() {
       if (sups.length > 0 && !form.supplier_id) setForm((f) => ({ ...f, supplier_id: sups[0].id }));
     }
     const deals = await DealService.getAllDeals();
-    setExistingDeals(deals);
+    setExistingDeals(deals.filter(d => d.status !== 'archived'));
   };
 
   useEffect(() => {
@@ -146,12 +146,12 @@ export default function CommanderPage() {
     if (!window.confirm("정말로 이 작전을 폐기하시겠습니까? (This will permanently delete this deal)")) return;
     
     setLoading(true);
-    const { success } = await DealService.deleteDeal(dealId);
+    const { success, error } = await DealService.deleteDeal(dealId);
     if (success) {
-      alert("작전이 폐기되었습니다.");
+      alert("작전이 성공적으로 폐기되었습니다.");
       setRefreshKey(prev => prev + 1);
     } else {
-      alert("폐기 실패: 권한이 없거나 통신 오류가 발생했습니다.");
+      alert(`폐기 실패: ${error}`);
     }
     setLoading(false);
   };
