@@ -65,6 +65,8 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
     };
   }, [trustScore, refreshKey]);
 
+  const isElite = trustScore >= 8.0;
+
   const calculateTimeLeft = (expiryDate: string) => {
     const diff = new Date(expiryDate).getTime() - now.getTime();
     if (diff <= 0) return "EXPIRED";
@@ -244,10 +246,18 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 <button 
                   className="btn-primary join-btn"
                   onClick={() => handleJoin(deal.id)}
-                  disabled={isCompleted}
-                  style={{ fontSize: "0.85rem", padding: "0.4rem 1rem" }}
+                  disabled={isCompleted || (deal.is_private && !isElite)}
+                  style={{ 
+                    fontSize: "0.85rem", padding: "0.4rem 1rem",
+                    background: (deal.is_private && !isElite && !isCompleted) ? "var(--surface-variant)" : "",
+                    color: (deal.is_private && !isElite && !isCompleted) ? "var(--on-surface-variant)" : ""
+                  }}
                 >
-                  {isCompleted ? (lang === "ko" ? "마감됨" : "Closed") : t.join}
+                  {isCompleted 
+                    ? (lang === "ko" ? "마감됨" : "Closed") 
+                    : (deal.is_private && !isElite 
+                        ? (lang === "ko" ? "엘리트 전용" : "Elite Only") 
+                        : t.join)}
                 </button>
               </div>
               </div>

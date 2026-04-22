@@ -30,6 +30,7 @@ export default function Home() {
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [trustScore, setTrustScore] = useState<number>(0);
   
   // Modal States
   const [selectedDeal, setSelectedDeal] = useState<{id: string, unit: string, title: string} | null>(null);
@@ -58,12 +59,24 @@ export default function Home() {
     async function checkUser() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
+      if (data.user) {
+        const profile = await LoyaltyService.getProfile(data.user.id);
+        if (profile) setTrustScore(profile.trust_score || 0);
+      } else {
+        setTrustScore(0);
+      }
     }
     checkUser();
 
     // Listen to Auth Changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        const profile = await LoyaltyService.getProfile(session.user.id);
+        if (profile) setTrustScore(profile.trust_score || 0);
+      } else {
+        setTrustScore(0);
+      }
     });
 
     return () => {
@@ -233,7 +246,7 @@ export default function Home() {
           <GroupDeals 
             lang={lang} 
             onJoin={handleGroupDealJoin}
-            trustScore={user ? 8.5 : 0} 
+            trustScore={trustScore} 
             refreshKey={refreshKey}
           />
         </div>
