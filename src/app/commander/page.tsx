@@ -392,7 +392,7 @@ export default function CommanderPage() {
                 <label className="label-md">이미지 URL 직접 입력</label>
                 <button 
                   type="button"
-                  onClick={() => setForm({...form, image_url: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Egg_1.jpg"})}
+                  onClick={() => setForm({...form, image_url: "https://i.imgur.com/k6FpY2F.jpg"})}
                   className="btn-secondary"
                   style={{ padding: "2px 8px", fontSize: "0.7rem" }}
                 >
