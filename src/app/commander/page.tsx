@@ -74,7 +74,7 @@ export default function CommanderPage() {
       setForm((f) => ({ ...f, image_url: publicUrl }));
     } catch (err) {
       console.warn("Storage not configured? Using fallback image.", err);
-      // Fallback: stay with current or set a specific one
+      alert("이미지 업로드에 실패했습니다. Storage 설정을 확인하거나 URL을 직접 입력해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -357,11 +357,37 @@ export default function CommanderPage() {
         <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
           <h2 className="headline-md mb-4">이미지 자산</h2>
           <div className="flex-col gap-4">
-            <div style={{ width: "100%", height: "150px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--outline-variant)" }}>
+            <div style={{ 
+              width: "100%", height: "200px", borderRadius: "var(--radius-md)", overflow: "hidden", 
+              border: "1px solid var(--outline-variant)", background: "var(--surface-container-low)",
+              position: "relative" 
+            }}>
               <img src={form.image_url} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {form.image_url.includes("unsplash.com") && (
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", color: "white", padding: "4px", fontSize: "0.7rem", textAlign: "center" }}>
+                  ⚠️ 현재 디폴트 이미지가 설정되어 있습니다.
+                </div>
+              )}
             </div>
-            <input type="file" onChange={handleImageUpload} accept="image/*" />
-            <p className="label-md" style={{ opacity: 0.6 }}>* 이미지 업로드 시 WebP로 자동 최적화됩니다.</p>
+            
+            <div className="flex-col gap-2">
+              <label className="label-md">이미지 URL 직접 입력</label>
+              <input 
+                className="commander-input"
+                value={form.image_url}
+                onChange={e => setForm({...form, image_url: e.target.value})}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+
+            <div className="flex-col gap-2">
+              <label className="label-md">또는 파일 업로드</label>
+              <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                <input type="file" onChange={handleImageUpload} accept="image/*" className="body-md" style={{ flex: 1 }} />
+                {loading && <span className="label-sm" style={{ color: "var(--primary)" }}>업로드 중...</span>}
+              </div>
+              <p className="label-sm" style={{ opacity: 0.6 }}>* 이미지 업로드 시 WebP로 자동 최적화됩니다.</p>
+            </div>
           </div>
         </section>
 

@@ -211,6 +211,7 @@ export class DealService {
         unit: data.unit,
         targetVol: data.target_volume,
         currentVol: data.current_volume,
+        image_url: data.image_url,
         supplierName: data.suppliers?.name,
         supplierEmail: data.suppliers?.email,
         tiers: data.deal_tiers
