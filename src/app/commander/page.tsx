@@ -31,6 +31,7 @@ export default function CommanderPage() {
     { threshold_pct: 0.7, discount_rate: 0.10 },
     { threshold_pct: 1.0, discount_rate: 0.15 },
   ]);
+   const [refreshKey, setRefreshKey] = useState(0);
 
   const loadData = async () => {
     const { data: sups } = await supabase.from("suppliers").select("*");
@@ -49,7 +50,7 @@ export default function CommanderPage() {
       if (user) await loadData();
     }
     init();
-  }, []);
+  }, [refreshKey]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -501,19 +502,7 @@ export default function CommanderPage() {
         >
           {loading ? "전략 전송 중..." : (editingId ? "작전 수정 완료 (업데이트)" : "새로운 작전 개시 (아이템 게시)")}
         </button>
-      </form>${deal.price_per_unit}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", background: "white" }}>편집</button>
-                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", color: "var(--error)", borderColor: "var(--error)", background: "white" }}>삭제</button>
-                  </div>
-                </div>
-              ))}
-              {existingDeals.filter(d => d.is_private).length === 0 && <p className="body-md p-4" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 비공개 전용 작전이 없습니다.</p>}
-            </div>
-          </div>
-        </div>
-      </section>
+      </form>
 
       <style jsx>{`
         .commander-input {
