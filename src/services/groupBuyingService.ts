@@ -8,6 +8,7 @@ export interface DiscountTier {
 export interface AllianceDeal {
   id: string;
   itemName: string;
+  itemNameEn?: string;
   currentVolume: number;
   targetVolume: number;
   status: "active" | "completed";
@@ -52,6 +53,7 @@ export const GroupBuyingService = {
     const deals: AllianceDeal[] = dbDeals.map((d: any) => ({
       id: d.id,
       itemName: d.item_name,
+      itemNameEn: d.item_name_en || d.item_name,
       currentVolume: Number(d.current_volume),
       targetVolume: Number(d.target_volume),
       status: d.status,

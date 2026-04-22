@@ -257,7 +257,18 @@ export default function Home() {
               {isCompleted && (
                 <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(0,0,0,0.05)", pointerEvents: "none" }} />
               )}
-              <div className="product-img-wrapper" style={{ height: "200px" }}>
+              <div className="product-img-wrapper" style={{ height: "200px", position: "relative" }}>
+                {isCompleted && (
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-15deg)",
+                    border: "4px solid #dc3545", color: "#dc3545", fontSize: "2.5rem", fontWeight: 900,
+                    padding: "4px 20px", borderRadius: "12px", textTransform: "uppercase", letterSpacing: "4px",
+                    zIndex: 20, pointerEvents: "none", background: "rgba(255, 255, 255, 0.9)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)", textShadow: "1px 1px 0px rgba(0,0,0,0.1)"
+                  }}>
+                    {lang === "ko" ? "마감" : "CLOSED"}
+                  </div>
+                )}
                 <img src={deal.image} alt={deal.title[lang]} />
                 {/* Live Countdown Badge */}
                 <div style={{

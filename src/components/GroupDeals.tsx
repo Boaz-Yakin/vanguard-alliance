@@ -144,6 +144,17 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                   position: "relative"
                 }}
               >
+                {isCompleted && (
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-15deg)",
+                    border: "4px solid #dc3545", color: "#dc3545", fontSize: "2.5rem", fontWeight: 900,
+                    padding: "4px 20px", borderRadius: "12px", textTransform: "uppercase", letterSpacing: "4px",
+                    zIndex: 20, pointerEvents: "none", background: "rgba(255, 255, 255, 0.9)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)", textShadow: "1px 1px 0px rgba(0,0,0,0.1)"
+                  }}>
+                    {lang === "ko" ? "마감" : "CLOSED"}
+                  </div>
+                )}
                 <div className="deal-badges" style={{ position: "absolute", top: "12px", right: "12px", display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end" }}>
                   <div className="badge-discount" style={{ 
                     background: "var(--brand-primary)", 
@@ -164,7 +175,9 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 <div className="deal-info" style={{ marginBottom: "0.5rem" }}>
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                      <span className="deal-name" style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--on-surface)" }}>{deal.itemName}</span>
+                      <span className="deal-name" style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--on-surface)" }}>
+                        {lang === "ko" ? deal.itemName : (deal.itemNameEn || deal.itemName)}
+                      </span>
                       {deal.is_private && <span className="private-badge">{t.private}</span>}
                     </div>
                     <span style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>{deal.supplierName}</span>
