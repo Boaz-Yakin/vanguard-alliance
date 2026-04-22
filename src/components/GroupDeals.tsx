@@ -136,8 +136,17 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                   position: "relative"
                 }}
               >
-                <div className="deal-badges" style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "0.5rem" }}>
-                  <div className="badge-discount" style={{ background: "var(--primary-fixed)", color: "black", padding: "4px 12px", borderRadius: "8px", fontWeight: "bold", fontSize: "1rem" }}>
+                <div className="deal-badges" style={{ position: "absolute", top: "12px", right: "12px", display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end" }}>
+                  <div className="badge-discount" style={{ 
+                    background: "var(--brand-primary)", 
+                    color: "var(--brand-on-primary)", 
+                    padding: "6px 14px", 
+                    borderRadius: "100px", 
+                    fontWeight: "900", 
+                    fontSize: "0.9rem",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    border: "2px solid rgba(255,255,255,0.2)"
+                  }}>
                     {(currentRate * 100).toFixed(0)}% OFF
                   </div>
                 </div>
