@@ -126,7 +126,9 @@ export default function CommanderPage() {
       is_private: deal.is_private,
     });
     if (deal.deal_tiers) {
-      setTiers(deal.deal_tiers.map((t: any) => ({
+      // Ensure unique tiers by threshold to prevent UI explosion
+      const uniqueTiers = Array.from(new Map(deal.deal_tiers.map((t: any) => [t.threshold_pct, t])).values());
+      setTiers(uniqueTiers.map((t: any) => ({
         threshold_pct: t.threshold_pct,
         discount_rate: t.discount_rate
       })));
@@ -392,7 +394,7 @@ export default function CommanderPage() {
                 <label className="label-md">이미지 URL 직접 입력</label>
                 <button 
                   type="button"
-                  onClick={() => setForm({...form, image_url: "https://i.imgur.com/k6FpY2F.jpg"})}
+                  onClick={() => setForm({...form, image_url: "https://images.unsplash.com/photo-1569288052389-dac9b01c9c05?w=400"})}
                   className="btn-secondary"
                   style={{ padding: "2px 8px", fontSize: "0.7rem" }}
                 >
