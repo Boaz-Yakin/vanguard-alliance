@@ -360,10 +360,17 @@ export default function CommanderPage() {
             <div style={{ 
               width: "100%", height: "200px", borderRadius: "var(--radius-md)", overflow: "hidden", 
               border: "1px solid var(--outline-variant)", background: "var(--surface-container-low)",
-              position: "relative" 
+              position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
             }}>
-              <img src={form.image_url} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              {form.image_url.includes("unsplash.com") && (
+              <img 
+                src={form.image_url} 
+                alt="Preview" 
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Invalid+Image+URL";
+                }}
+              />
+              {form.image_url === "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80" && (
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", color: "white", padding: "4px", fontSize: "0.7rem", textAlign: "center" }}>
                   ⚠️ 현재 디폴트 이미지가 설정되어 있습니다.
                 </div>
