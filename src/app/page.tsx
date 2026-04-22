@@ -31,6 +31,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [trustScore, setTrustScore] = useState<number>(0);
+  const [userLevel, setUserLevel] = useState<number>(1);
   
   // Modal States
   const [selectedDeal, setSelectedDeal] = useState<{id: string, unit: string, title: string} | null>(null);
@@ -61,9 +62,13 @@ export default function Home() {
       setUser(data.user);
       if (data.user) {
         const profile = await LoyaltyService.getProfile(data.user.id);
-        if (profile) setTrustScore(profile.trust_score || 0);
+        if (profile) {
+          setTrustScore(profile.trust_score || 0);
+          setUserLevel(profile.level || 1);
+        }
       } else {
         setTrustScore(0);
+        setUserLevel(1);
       }
     }
     checkUser();
@@ -73,9 +78,13 @@ export default function Home() {
       setUser(session?.user || null);
       if (session?.user) {
         const profile = await LoyaltyService.getProfile(session.user.id);
-        if (profile) setTrustScore(profile.trust_score || 0);
+        if (profile) {
+          setTrustScore(profile.trust_score || 0);
+          setUserLevel(profile.level || 1);
+        }
       } else {
         setTrustScore(0);
+        setUserLevel(1);
       }
     });
 
@@ -247,6 +256,7 @@ export default function Home() {
             lang={lang} 
             onJoin={handleGroupDealJoin}
             trustScore={trustScore} 
+            userLevel={userLevel}
             refreshKey={refreshKey}
           />
         </div>

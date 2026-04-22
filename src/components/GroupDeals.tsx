@@ -8,10 +8,11 @@ interface GroupDealsProps {
   onJoin: (dealId: string, itemName: string, quantity: string) => void;
   parsedItems?: { name: string, quantity: string }[];
   trustScore?: number;
+  userLevel?: number;
   refreshKey?: number;
 }
 
-export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, refreshKey = 0 }: GroupDealsProps) => {
+export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, userLevel = 1, refreshKey = 0 }: GroupDealsProps) => {
   const [deals, setDeals] = useState<AllianceDeal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +66,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
     };
   }, [trustScore, refreshKey]);
 
-  const isElite = trustScore >= 8.0;
+  const isElite = userLevel >= 5;
 
   const calculateTimeLeft = (expiryDate: string) => {
     const diff = new Date(expiryDate).getTime() - now.getTime();

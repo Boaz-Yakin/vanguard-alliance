@@ -7,6 +7,22 @@ import { LOYALTY_CONFIG } from "@/config/loyaltyConfig";
  */
 export const LoyaltyService = {
   /**
+   * Get user profile (points, trust_score, level)
+   */
+  async getProfile(userId: string) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("points, trust_score, level")
+      .eq("id", userId)
+      .single();
+    if (error) {
+      console.error("[VANGUARD] Error fetching profile:", error);
+      return null;
+    }
+    return data;
+  },
+
+  /**
    * Points calculation based on configurable thresholds.
    */
   calculatePoints(totalAmount: number): number {
