@@ -250,9 +250,13 @@ export default function Home() {
         {/* Product List */}
         <div className="flex-col gap-4">
           {filteredDeals.map((deal) => {
-            const countdown = formatCountdown(deal.expiresAt, lang);
+            const isCompleted = deal.currentVolume >= deal.targetVolume || new Date(deal.expiresAt) < new Date() || deal.status === 'completed';
+            const countdown = isCompleted ? { urgent: false, label: lang === "ko" ? "조기 마감" : "Closed" } : formatCountdown(deal.expiresAt, lang);
             return (
-            <div key={deal.id} className="product-card">
+            <div key={deal.id} className="product-card" style={{ filter: isCompleted ? "grayscale(100%) opacity(0.7)" : "none", position: "relative" }}>
+              {isCompleted && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(0,0,0,0.05)", pointerEvents: "none" }} />
+              )}
               <div className="product-img-wrapper" style={{ height: "200px" }}>
                 <img src={deal.image} alt={deal.title[lang]} />
                 {/* Live Countdown Badge */}

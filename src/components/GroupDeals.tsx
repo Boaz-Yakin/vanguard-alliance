@@ -119,9 +119,17 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
           
           const currentRate = GroupBuyingService.getCurrentDiscountRate({ ...deal, currentVolume: totalVol });
           const nextTier = deal.tiers.find(t => t.threshold > (totalVol / deal.targetVolume));
+          
+          const isCompleted = deal.currentVolume >= deal.targetVolume || new Date(deal.expiresAt) < new Date() || deal.status === 'completed';
 
           return (
-            <div key={deal.id} className="deal-item" style={{ padding: "0", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div key={deal.id} className="deal-item" style={{ 
+              padding: "0", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", overflow: "hidden",
+              filter: isCompleted ? "grayscale(100%) opacity(0.7)" : "none", position: "relative" 
+            }}>
+              {isCompleted && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(0,0,0,0.05)", pointerEvents: "none" }} />
+              )}
               {/* Product Image Section */}
               <div 
                 className="deal-image-container" 
@@ -216,10 +224,10 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 <button 
                   className="btn-primary join-btn"
                   onClick={() => handleJoin(deal.id)}
-                  disabled={totalVol >= deal.targetVolume}
+                  disabled={isCompleted}
                   style={{ fontSize: "0.85rem", padding: "0.4rem 1rem" }}
                 >
-                  {t.join}
+                  {isCompleted ? (lang === "ko" ? "마감됨" : "Closed") : t.join}
                 </button>
               </div>
               </div>

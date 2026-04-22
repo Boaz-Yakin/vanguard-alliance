@@ -28,11 +28,14 @@ export const GroupBuyingService = {
    */
   async getActiveDeals(trustScore: number = 0): Promise<AllianceDeal[]> {
     console.log("[VANGUARD] Fetching active alliance deals...");
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
     const { data: dbDeals, error } = await supabase
       .from('deals')
       .select('*, suppliers(name), deal_tiers(*)')
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
+      .in('status', ['active', 'completed'])
+      .gt('expires_at', threeDaysAgo.toISOString())
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -74,10 +74,14 @@ export class DealService {
   static async getActiveDeals(includePrivate: boolean = true): Promise<any[]> {
     try {
       console.log("[VANGUARD] Fetching active regular deals...");
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
       let query = supabase
         .from('deals')
         .select('*, deal_tiers(*)')
-        .eq('status', 'active')
+        .in('status', ['active', 'completed'])
+        .gt('expires_at', threeDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
