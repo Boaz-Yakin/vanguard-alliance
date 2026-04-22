@@ -142,16 +142,17 @@ h1, h2, h3, h4, h5, h6, .display-txt {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  /* slight bleed */
-  transform: scale(1.02);
-  margin-top: -2%;
-  margin-left: -1%;
+  background-color: #ffffff; /* White background for contained images */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .product-img-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* Don't crop, show everything */
+  padding: 0.5rem; /* Breath room */
 }
 
 .card-content {
