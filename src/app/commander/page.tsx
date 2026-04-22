@@ -247,7 +247,7 @@ export default function CommanderPage() {
                   </div>
                   <div style={{ display: "flex", gap: "0.75rem" }}>
                     <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "8px 16px" }}>편집</button>
-                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", fontWeight: "bold" }}>🗑️ 즉시 삭제</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", fontWeight: "bold" }}>🗑️ 삭제</button>
                   </div>
                 </div>
               ))}
@@ -270,7 +270,7 @@ export default function CommanderPage() {
                   </div>
                   <div style={{ display: "flex", gap: "0.75rem" }}>
                     <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "8px 16px", background: "white" }}>편집</button>
-                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", background: "white", fontWeight: "bold" }}>🗑️ 즉시 삭제</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", background: "white", fontWeight: "bold" }}>🗑️ 삭제</button>
                   </div>
                 </div>
               ))}
