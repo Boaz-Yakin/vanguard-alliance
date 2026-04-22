@@ -141,6 +141,20 @@ export default function CommanderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleDelete = async (dealId: string) => {
+    if (!window.confirm("정말로 이 작전을 폐기하시겠습니까? (This will permanently delete this deal)")) return;
+    
+    setLoading(true);
+    const { success } = await DealService.deleteDeal(dealId);
+    if (success) {
+      alert("작전이 폐기되었습니다.");
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert("폐기 실패: 권한이 없거나 통신 오류가 발생했습니다.");
+    }
+    setLoading(false);
+  };
+
   if (!user || user.email !== 'boaznyakin@gmail.com') {
     return (
       <div className="container flex-col items-center justify-center" style={{ padding: "2rem", textAlign: "center", minHeight: "80vh" }}>
@@ -436,7 +450,10 @@ export default function CommanderPage() {
                     <div className="title-md">{deal.item_name}</div>
                     <div className="body-sm" style={{ opacity: 0.7 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
                   </div>
-                  <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>편집</button>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>편집</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", color: "var(--error)", borderColor: "var(--error)" }}>삭제</button>
+                  </div>
                 </div>
               ))}
               {existingDeals.filter(d => !d.is_private).length === 0 && <p className="body-md p-4" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 공개 작전이 없습니다.</p>}
@@ -456,7 +473,10 @@ export default function CommanderPage() {
                     <div className="title-md" style={{ color: "var(--on-primary-container)" }}>{deal.item_name}</div>
                     <div className="body-sm" style={{ color: "var(--on-primary-container)", opacity: 0.7 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
                   </div>
-                  <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", background: "white" }}>편집</button>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", background: "white" }}>편집</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", color: "var(--error)", borderColor: "var(--error)", background: "white" }}>삭제</button>
+                  </div>
                 </div>
               ))}
               {existingDeals.filter(d => d.is_private).length === 0 && <p className="body-md p-4" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 비공개 전용 작전이 없습니다.</p>}

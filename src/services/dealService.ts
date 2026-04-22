@@ -146,6 +146,34 @@ export class DealService {
   }
 
   /**
+   * Strategically eliminates a deal from the system.
+   */
+  static async deleteDeal(dealId: string): Promise<{ success: boolean; error?: any }> {
+    try {
+      // 1. Delete associated tiers first (if not cascading)
+      const { error: tierError } = await supabase
+        .from('deal_tiers')
+        .delete()
+        .eq('deal_id', dealId);
+      
+      if (tierError) throw tierError;
+
+      // 2. Delete the deal itself
+      const { error: dealError } = await supabase
+        .from('deals')
+        .delete()
+        .eq('id', dealId);
+      
+      if (dealError) throw dealError;
+
+      return { success: true };
+    } catch (e) {
+      console.error("VANGUARD: Failed to terminate deal.", e);
+      return { success: false, error: e };
+    }
+  }
+
+  /**
    * Admin only: Updates an existing deal.
    */
   static async updateDeal(dealId: string, input: CreateDealInput): Promise<{ success: boolean; error?: any }> {
