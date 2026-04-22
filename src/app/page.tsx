@@ -95,14 +95,14 @@ export default function Home() {
 
     // 3. [Integration] Check for Dispatch Trigger (Phase 1.1)
     const updatedDeal = await DealService.getDealById(selectedDeal.id);
-    if (updatedDeal && updatedDeal.currentVol >= updatedDeal.targetVol) {
+    if (updatedDeal && updatedDeal.currentVolume >= updatedDeal.targetVolume) {
       await DispatchService.dispatch({
         name: updatedDeal.supplierName || "Vanguard Vendor",
         email: updatedDeal.supplierEmail || "vendor@vanguard.test",
         preferredChannel: 'email'
       }, {
         subject: `[VANGUARD] Order Finalized: ${updatedDeal.title.en}`,
-        body: `Deal ${updatedDeal.id} has reached target volume of ${updatedDeal.targetVol} ${updatedDeal.unit}. Please fulfill.`
+        body: `Deal ${updatedDeal.id} has reached target volume of ${updatedDeal.targetVolume} ${updatedDeal.unit}. Please fulfill.`
       });
     }
     
@@ -288,12 +288,12 @@ export default function Home() {
 
                 <div className="mt-4">
                   <div className="progress-bg" style={{ position: "relative", overflow: "visible", marginTop: "24px", marginBottom: "20px" }}>
-                    <div className="progress-fill" style={{ width: `${Math.min((deal.currentVol / deal.targetVol) * 100, 100)}%`, zIndex: 1 }}></div>
+                    <div className="progress-fill" style={{ width: `${Math.min((deal.currentVolume / deal.targetVolume) * 100, 100)}%`, zIndex: 1 }}></div>
                     
                     {/* Integrated Tier Indicators (Separated Top/Bottom) */}
                     {deal.tiers?.map((tier: any, idx: number) => {
                       const pos = tier.threshold * 100;
-                      const isReached = (deal.currentVol / deal.targetVol) >= tier.threshold;
+                      const isReached = (deal.currentVolume / deal.targetVolume) >= tier.threshold;
                       return (
                         <div key={idx} style={{ position: "absolute", left: `${pos}%`, top: 0, bottom: 0, width: "3px", background: isReached ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.15)", zIndex: 3, pointerEvents: "none" }}>
                           {/* Discount Label - MOVED TO TOP */}
@@ -310,9 +310,9 @@ export default function Home() {
                   </div>
                   
                   {/* Volume Stats - KEPT AT BOTTOM */}
-                  <div className="flex justify-between label-md mt-2" style={{ color: deal.currentVol >= deal.targetVol * 0.8 ? "var(--primary)" : "var(--on-surface-variant)" }}>
+                  <div className="flex justify-between label-md mt-2" style={{ color: deal.currentVolume >= deal.targetVolume * 0.8 ? "var(--primary)" : "var(--on-surface-variant)" }}>
                     <span>{deal.statusText[lang]}</span>
-                    <span>{deal.currentVol} {deal.unit} / {deal.targetVol} {deal.unit}</span>
+                    <span>{deal.currentVolume} {deal.unit} / {deal.targetVolume} {deal.unit}</span>
                   </div>
                 </div>
 
@@ -320,9 +320,9 @@ export default function Home() {
                   className="btn-primary mt-4" 
                   style={{ width: "100%" }}
                   onClick={() => handleParticipateClick(deal)}
-                  disabled={deal.currentVol >= deal.targetVol}
+                  disabled={deal.currentVolume >= deal.targetVolume}
                 >
-                  {deal.currentVol >= deal.targetVol ? (lang === "ko" ? "마감됨" : "Closed") : t.participate}
+                  {deal.currentVolume >= deal.targetVolume ? (lang === "ko" ? "마감됨" : "Closed") : t.participate}
                 </button>
               </div>
             </div>
