@@ -125,7 +125,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
           return (
             <div key={deal.id} className="deal-item" style={{ 
               padding: "0", background: "var(--surface-container-lowest)", borderRadius: "12px", boxShadow: "var(--ambient-shadow)", display: "flex", flexDirection: "column", overflow: "hidden",
-              filter: isCompleted ? "grayscale(100%) opacity(0.7)" : "none", position: "relative" 
+              opacity: isCompleted ? 0.7 : 1, position: "relative" 
             }}>
               {isCompleted && (
                 <div style={{ position: "absolute", inset: 0, zIndex: 10, background: "rgba(0,0,0,0.05)", pointerEvents: "none" }} />
@@ -136,14 +136,19 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 style={{ 
                   width: "100%", 
                   height: "160px", 
+                  position: "relative",
+                  backgroundColor: "#ffffff"
+                }}
+              >
+                <div style={{
+                  position: "absolute", inset: 0,
                   backgroundSize: "contain", 
                   backgroundRepeat: "no-repeat",
                   backgroundPosition: "center", 
-                  backgroundColor: "#ffffff",
                   backgroundImage: `url(${deal.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300'})`,
-                  position: "relative"
-                }}
-              >
+                  filter: isCompleted ? "grayscale(100%)" : "none"
+                }} />
+                
                 {isCompleted && (
                   <div style={{
                     position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-15deg)",
@@ -157,8 +162,8 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 )}
                 <div className="deal-badges" style={{ position: "absolute", top: "12px", right: "12px", display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-end" }}>
                   <div className="badge-discount" style={{ 
-                    background: "var(--brand-primary)", 
-                    color: "var(--brand-on-primary)", 
+                    background: isCompleted ? "var(--surface-variant)" : "var(--brand-primary)", 
+                    color: isCompleted ? "var(--on-surface-variant)" : "var(--brand-on-primary)", 
                     padding: "6px 14px", 
                     borderRadius: "100px", 
                     fontWeight: "900", 
