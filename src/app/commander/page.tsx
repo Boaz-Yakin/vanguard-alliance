@@ -416,7 +416,6 @@ export default function CommanderPage() {
                   type="file" 
                   onChange={handleImageUpload} 
                   accept="image/*" 
-                  capture="environment"
                   className="body-md" 
                   style={{ flex: 1 }} 
                 />
