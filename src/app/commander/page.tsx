@@ -182,14 +182,24 @@ export default function CommanderPage() {
         </div>
         <div className="flex gap-2 commander-header-buttons">
           {editingId && (
-            <button 
-              type="button"
-              onClick={() => { setEditingId(null); setForm(initialForm); }}
-              className="btn-outline"
-              style={{ padding: "0.5rem 1rem", borderColor: "var(--error)", color: "#d32f2f" }}
-            >
-              편집 취소
-            </button>
+            <>
+              <button 
+                type="button"
+                onClick={() => handleDelete(editingId)}
+                className="btn-secondary"
+                style={{ padding: "0.5rem 1rem", background: "var(--error)", color: "white", borderColor: "var(--error)" }}
+              >
+                🗑️ 작전 폐기
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setEditingId(null); setForm(initialForm); }}
+                className="btn-outline"
+                style={{ padding: "0.5rem 1rem", borderColor: "var(--error)", color: "#d32f2f" }}
+              >
+                편집 취소
+              </button>
+            </>
           )}
           <button 
             type="button"
