@@ -243,20 +243,23 @@ export default function CommanderPage() {
             </div>
           </div>
           
-          <div className="flex-col gap-2 mt-4">
-            <label className="label-md">작전 등급</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="flex-col gap-2 mt-6 p-4" style={{ background: "var(--surface-container-high)", borderRadius: "var(--radius-md)", border: "1px solid var(--primary-fixed-dim)" }}>
+            <label className="label-md" style={{ color: "var(--primary)", fontWeight: "bold" }}>🔐 작전 보안 등급 (Security Level)</label>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <input 
                 type="checkbox"
                 id="is_private"
-                style={{ width: "20px", height: "20px" }}
+                style={{ width: "24px", height: "24px", cursor: "pointer" }}
                 checked={form.is_private}
                 onChange={e => setForm({...form, is_private: e.target.checked})}
               />
-              <label htmlFor="is_private" className="body-md" style={{ color: form.is_private ? "var(--primary)" : "inherit", fontWeight: form.is_private ? 700 : 400 }}>
-                엘리트 전용 (동맹 공동 구매 섹션에만 노출)
+              <label htmlFor="is_private" className="body-md" style={{ cursor: "pointer", color: form.is_private ? "var(--primary)" : "inherit", fontWeight: form.is_private ? 800 : 500 }}>
+                {form.is_private ? "엘리트 동맹 전용 작전 (기밀)" : "일반 동맹 공개 작전 (공개)"}
               </label>
             </div>
+            <p className="label-sm" style={{ opacity: 0.7, marginTop: "4px" }}>
+              * 체크 시, 신뢰도가 높은 엘리트 멤버들에게만 작전이 노출됩니다.
+            </p>
           </div>
         </section>
 
