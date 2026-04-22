@@ -15,6 +15,7 @@ export interface AllianceDeal {
   expiresIn: string;
   expiresAt: string; // ISO string for client-side countdown
   pricePerUnit: number;
+  unit: string;
   is_private?: boolean;
   imageUrl?: string;
   tiers: DiscountTier[];
