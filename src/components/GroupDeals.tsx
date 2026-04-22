@@ -137,10 +137,9 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 }}
               >
                 <div className="deal-badges" style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "0.5rem" }}>
-                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--brand-secondary-variant)", color: "var(--brand-on-secondary)", padding: "4px 8px", borderRadius: "6px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
-                  <span style={{ fontSize: "0.7rem", background: "rgba(255,255,255,0.9)", color: "var(--brand-primary)", padding: "4px 8px", borderRadius: "6px", fontWeight: 700, border: "1px solid var(--brand-primary-variant)" }}>
-                    +Bonus P
-                  </span>
+                  <div className="badge-discount" style={{ background: "var(--primary-fixed)", color: "black", padding: "4px 12px", borderRadius: "8px", fontWeight: "bold", fontSize: "1rem" }}>
+                    {(currentRate * 100).toFixed(0)}% OFF
+                  </div>
                 </div>
               </div>
 
