@@ -151,32 +151,30 @@ export class DealService {
    */
   static async deleteDeal(dealId: string): Promise<{ success: boolean; error?: any; method?: 'deleted' | 'archived' }> {
     try {
-      // 1. Delete associated tiers first (if not cascading)
-      const { error: tierError } = await supabase
-        .from('deal_tiers')
-        .delete()
-        .eq('deal_id', dealId);
-      
-      if (tierError) throw tierError;
-
-      // 2. Delete the deal itself
-      const { error: dealError } = await supabase
+      // 1. First, try to mark as archived. This is the most reliable way to "hide" it immediately.
+      const { data: updateData, error: updateError } = await supabase
         .from('deals')
-        .delete()
-        .eq('id', dealId);
+        .update({ status: 'archived' })
+        .eq('id', dealId)
+        .select();
+
+      if (updateError) throw updateError;
       
-      if (dealError) {
-        // Fallback: If hard delete fails (e.g. foreign key constraint), mark as archived
-        const { error: updateError } = await supabase
-          .from('deals')
-          .update({ status: 'archived' })
-          .eq('id', dealId);
-        
-        if (updateError) throw updateError;
-        return { success: true, method: 'archived' };
+      // If no rows were updated, it means RLS blocked it or ID is wrong.
+      if (!updateData || updateData.length === 0) {
+        throw new Error("데이터베이스 권한이 부족하거나 작전을 찾을 수 없습니다. (RLS Blocked)");
       }
 
-      return { success: true, method: 'deleted' };
+      // 2. Now try to hard delete the tiers and the deal itself for cleanup.
+      // We don't throw if this fails, as the 'archived' status already hides it.
+      try {
+        await supabase.from('deal_tiers').delete().eq('deal_id', dealId);
+        await supabase.from('deals').delete().eq('id', dealId);
+        return { success: true, method: 'deleted' };
+      } catch (e) {
+        // If hard delete fails, it's already archived, so it's a success anyway.
+        return { success: true, method: 'archived' };
+      }
     } catch (e: any) {
       console.error("VANGUARD: Failed to terminate deal.", e);
       return { success: false, error: e?.message || "Unknown error" };
