@@ -162,7 +162,7 @@ export default function MyDealsPage() {
             }}>
               <span className="title-md" style={{ opacity: 0.85 }}>{t.totalLabel}</span>
               <span className="headline-md" style={{ fontWeight: 800 }}>
-                ${grandTotal.toFixed(2)}
+                ${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </span>
             </div>
 
@@ -183,14 +183,25 @@ export default function MyDealsPage() {
                         {new Date(deal.joined_at).toLocaleDateString(lang === "ko" ? "ko-KR" : "en-US")}
                       </p>
                     </div>
-                    <span style={{
-                      background: deal.status === "active" ? "var(--primary-container)" : "var(--surface-variant)",
-                      color: deal.status === "active" ? "var(--on-primary-container)" : "var(--on-surface-variant)",
-                      borderRadius: "100px", padding: "2px 10px", fontSize: "0.75rem", fontWeight: 700,
-                      whiteSpace: "nowrap", marginLeft: "8px"
-                    }}>
-                      {deal.status === "active" ? t.statActive : t.statClosed}
-                    </span>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <span style={{
+                        background: "var(--surface-variant)",
+                        color: "var(--on-surface-variant)",
+                        borderRadius: "100px", padding: "2px 10px", fontSize: "0.75rem", fontWeight: 700,
+                        whiteSpace: "nowrap"
+                      }}>
+                        {deal.status === "active" ? t.statActive : t.statClosed}
+                      </span>
+                      <span style={{
+                        background: deal.status === "active" ? "rgba(255,193,7,0.15)" : "rgba(40,167,69,0.15)",
+                        color: deal.status === "active" ? "#b38600" : "#28a745",
+                        border: `1px solid ${deal.status === "active" ? "#ffc107" : "#28a745"}`,
+                        borderRadius: "100px", padding: "2px 10px", fontSize: "0.75rem", fontWeight: 700,
+                        whiteSpace: "nowrap"
+                      }}>
+                        {deal.status === "active" ? (lang === "ko" ? "입금 대기" : "Awaiting Deposit") : (lang === "ko" ? "결제 완료" : "Paid")}
+                      </span>
+                    </div>
                   </div>
 
                   <div style={{
@@ -200,15 +211,15 @@ export default function MyDealsPage() {
                   }}>
                     <div>
                       <p className="label-sm" style={{ color: "var(--on-surface-variant)" }}>{t.colQty}</p>
-                      <p className="body-md" style={{ fontWeight: 700 }}>{deal.qty} {deal.unit}</p>
+                      <p className="body-md" style={{ fontWeight: 700 }}>{deal.qty.toLocaleString('en-US')} {deal.unit}</p>
                     </div>
                     <div>
                       <p className="label-sm" style={{ color: "var(--on-surface-variant)" }}>{t.colPrice}</p>
-                      <p className="body-md" style={{ fontWeight: 700 }}>${deal.price_per_unit.toFixed(2)}</p>
+                      <p className="body-md" style={{ fontWeight: 700 }}>${deal.price_per_unit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <p className="label-sm" style={{ color: "var(--on-surface-variant)" }}>{t.colTotal}</p>
-                      <p className="body-md" style={{ fontWeight: 800, color: "var(--primary)" }}>${deal.total.toFixed(2)}</p>
+                      <p className="body-md" style={{ fontWeight: 800, color: "var(--primary)" }}>${deal.total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                     </div>
                   </div>
                 </div>
