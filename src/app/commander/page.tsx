@@ -379,38 +379,13 @@ export default function CommanderPage() {
                 alt="Preview" 
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Invalid+Image+URL";
+                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Select+Product+Image";
                 }}
-              />
-              {form.image_url === "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80" && (
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", color: "white", padding: "4px", fontSize: "0.7rem", textAlign: "center" }}>
-                  ⚠️ 현재 디폴트 이미지가 설정되어 있습니다.
-                </div>
-              )}
-            </div>
-            
-            <div className="flex-col gap-2">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label className="label-md">이미지 URL 직접 입력</label>
-                <button 
-                  type="button"
-                  onClick={() => setForm({...form, image_url: "https://images.unsplash.com/photo-1569288052389-dac9b01c9c05?w=400"})}
-                  className="btn-secondary"
-                  style={{ padding: "2px 8px", fontSize: "0.7rem" }}
-                >
-                  🥚 달걀 이미지 자동 입력
-                </button>
-              </div>
-              <input 
-                className="commander-input"
-                value={form.image_url}
-                onChange={e => setForm({...form, image_url: e.target.value})}
-                placeholder="https://example.com/image.jpg"
               />
             </div>
 
             <div className="flex-col gap-2">
-              <label className="label-md">또는 파일 업로드 (PC/카메라)</label>
+              <label className="label-md">상품 이미지 업로드</label>
               <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                 <input 
                   type="file" 
@@ -421,7 +396,7 @@ export default function CommanderPage() {
                 />
                 {loading && <span className="label-sm" style={{ color: "var(--primary)" }}>업로드 중...</span>}
               </div>
-              <p className="label-sm" style={{ opacity: 0.6 }}>* 카메라로 직접 촬영하거나 PC 파일을 선택할 수 있습니다.</p>
+              <p className="label-sm" style={{ opacity: 0.6 }}>* 고화질의 정방형 또는 가로형 이미지를 추천합니다.</p>
             </div>
           </div>
         </section>
