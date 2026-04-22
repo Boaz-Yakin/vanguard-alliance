@@ -127,7 +127,7 @@ export default function Home() {
 
   const t = {
     ko: {
-      navTitle: "Collective Deals [SYNC-TEST]",
+      navTitle: "뱅가드 공동구매",
       hotDeals: "이번 주 핫딜 🔥",
       hotDealsSub: "지금 참여하면 최대 24% 할인",
       participate: "공동구매 참여하기",
@@ -143,7 +143,7 @@ export default function Home() {
       adminNav: "관리화면"
     },
     en: {
-      navTitle: "Collective Deals",
+      navTitle: "VANGUARD ALLIANCE",
       hotDeals: "This Week's Hot Deals 🔥",
       hotDealsSub: "Join now for up to 24% off",
       participate: "Join Collective Deal",
