@@ -8,16 +8,23 @@ import { LOYALTY_CONFIG } from "@/config/loyaltyConfig";
 export const LoyaltyService = {
   /**
    * Get user profile (points, trust_score, level)
+   * Gracefully handles missing columns.
    */
   async getProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
       .select("points, trust_score, level")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     if (error) {
-      console.error("[VANGUARD] Error fetching profile:", error);
-      return null;
+      console.error("[VANGUARD] Error fetching profile, retrying without level:", error.message);
+      // Fallback: fetch without level in case the column doesn't exist yet
+      const { data: fallback } = await supabase
+        .from("profiles")
+        .select("points, trust_score")
+        .eq("id", userId)
+        .maybeSingle();
+      return fallback ? { ...fallback, level: 1 } : null;
     }
     return data;
   },

@@ -61,10 +61,16 @@ export default function Home() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
       if (data.user) {
-        const profile = await LoyaltyService.getProfile(data.user.id);
-        if (profile) {
-          setTrustScore(profile.trust_score || 0);
-          setUserLevel(profile.level || 1);
+        // Admin override: always grant max privileges
+        if (data.user.email === 'boaznyakin@gmail.com') {
+          setTrustScore(10);
+          setUserLevel(5);
+        } else {
+          const profile = await LoyaltyService.getProfile(data.user.id);
+          if (profile) {
+            setTrustScore(profile.trust_score || 0);
+            setUserLevel(profile.level || 1);
+          }
         }
       } else {
         setTrustScore(0);
@@ -77,10 +83,19 @@ export default function Home() {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
       setUser(session?.user || null);
       if (session?.user) {
-        const profile = await LoyaltyService.getProfile(session.user.id);
-        if (profile) {
-          setTrustScore(profile.trust_score || 0);
-          setUserLevel(profile.level || 1);
+        // Admin override: always grant max privileges
+        if (session.user.email === 'boaznyakin@gmail.com') {
+          setTrustScore(10);
+          setUserLevel(5);
+        } else {
+          const profile = await LoyaltyService.getProfile(session.user.id);
+          if (profile) {
+            setTrustScore(profile.trust_score || 0);
+            setUserLevel(profile.level || 1);
+          } else {
+            setTrustScore(0);
+            setUserLevel(1);
+          }
         }
       } else {
         setTrustScore(0);
