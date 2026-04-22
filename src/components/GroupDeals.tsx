@@ -147,10 +147,10 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 {isCompleted && (
                   <div style={{
                     position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-15deg)",
-                    border: "4px solid #dc3545", color: "#dc3545", fontSize: "2.5rem", fontWeight: 900,
-                    padding: "4px 20px", borderRadius: "12px", textTransform: "uppercase", letterSpacing: "4px",
-                    zIndex: 20, pointerEvents: "none", background: "rgba(255, 255, 255, 0.9)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)", textShadow: "1px 1px 0px rgba(0,0,0,0.1)"
+                    border: "3px solid #c62828", color: "#c62828", fontSize: "1.25rem", fontWeight: 900,
+                    padding: "4px 12px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "2px",
+                    zIndex: 20, pointerEvents: "none", background: "transparent",
+                    textShadow: "1px 1px 0px rgba(255,255,255,0.5)"
                   }}>
                     {lang === "ko" ? "마감" : "CLOSED"}
                   </div>
