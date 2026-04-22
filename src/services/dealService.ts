@@ -148,7 +148,7 @@ export class DealService {
   /**
    * Strategically eliminates a deal from the system.
    */
-  static async deleteDeal(dealId: string): Promise<{ success: boolean; error?: any }> {
+  static async deleteDeal(dealId: string): Promise<{ success: boolean; error?: any; method?: 'deleted' | 'archived' }> {
     try {
       // 1. Delete associated tiers first (if not cascading)
       const { error: tierError } = await supabase
