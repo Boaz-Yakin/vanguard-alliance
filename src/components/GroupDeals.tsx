@@ -161,6 +161,13 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                     </div>
                     <span style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>{deal.supplierName}</span>
                   </div>
+                  
+                  <div className="flex items-center justify-between mt-3">
+                    <div>
+                      <span className="headline-md" style={{ fontWeight: 800 }}>${deal.pricePerUnit}</span>
+                      <span className="label-md" style={{ marginLeft: "4px", color: "var(--on-surface-variant)" }}>/ {deal.unit || 'unit'}</span>
+                    </div>
+                  </div>
                 </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
