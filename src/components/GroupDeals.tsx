@@ -108,8 +108,10 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 style={{ 
                   width: "100%", 
                   height: "160px", 
-                  backgroundSize: "cover", 
+                  backgroundSize: "contain", 
+                  backgroundRepeat: "no-repeat",
                   backgroundPosition: "center", 
+                  backgroundColor: "#ffffff",
                   backgroundImage: `url(${deal.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300'})`,
                   position: "relative"
                 }}

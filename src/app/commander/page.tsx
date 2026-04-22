@@ -371,13 +371,13 @@ export default function CommanderPage() {
           <div className="flex-col gap-4">
             <div style={{ 
               width: "100%", height: "200px", borderRadius: "var(--radius-md)", overflow: "hidden", 
-              border: "1px solid var(--outline-variant)", background: "var(--surface-container-low)",
+              border: "1px solid var(--outline-variant)", background: "#ffffff",
               position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
             }}>
               <img 
                 src={form.image_url} 
                 alt="Preview" 
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Invalid+Image+URL";
                 }}
