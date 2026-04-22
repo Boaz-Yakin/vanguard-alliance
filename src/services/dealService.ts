@@ -192,6 +192,36 @@ export class DealService {
   }
 
   /**
+   * Fetches a single deal by its ID.
+   */
+  static async getDealById(dealId: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*, suppliers(name, email), deal_tiers(*)')
+        .eq('id', dealId)
+        .single();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        id: data.id,
+        title: { ko: data.item_name, en: data.item_name_en },
+        unit: data.unit,
+        targetVol: data.target_volume,
+        currentVol: data.current_volume,
+        supplierName: data.suppliers?.name,
+        supplierEmail: data.suppliers?.email,
+        tiers: data.deal_tiers
+      };
+    } catch (e) {
+      console.error("VANGUARD: Failed to fetch single deal.", e);
+      return null;
+    }
+  }
+
+  /**
    * Records a user's participation in a deal and updates the current volume.
    */
   static async joinDeal(dealId: string, additionalVolume: number): Promise<{ success: boolean; newVolume?: number; error?: any }> {

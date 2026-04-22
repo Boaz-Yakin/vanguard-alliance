@@ -1,24 +1,23 @@
 :root {
-  /* The Editorial Harvest Palette */
-  --primary: #9c4000;
-  --primary-container: #c35200;
-  --on-primary: #ffffff;
+  /* Core Brand Identity (Themable) */
+  --brand-primary: #9c4000;
+  --brand-primary-variant: #c35200;
+  --brand-on-primary: #ffffff;
   
-  --secondary: #1e6d25;
-  --secondary-container: #a4f69d;
-  --secondary-fixed: #a4f69d;
-  --on-secondary-fixed: #002204;
+  --brand-secondary: #1e6d25;
+  --brand-secondary-variant: #a4f69d;
+  --brand-on-secondary: #002204;
   
-  --surface: #f8f9fa;
-  --surface-container-low: #f3f4f5;
-  --surface-container: #edeeef;
-  --surface-container-high: #e7e8e9;
-  --surface-container-lowest: #ffffff;
+  /* System Surfaces (Consistent across projects) */
+  --surface-bg: #f8f9fa;
+  --surface-low: #f3f4f5;
+  --surface-mid: #edeeef;
+  --surface-high: #e7e8e9;
+  --surface-pure: #ffffff;
   
-  --surface-variant: #e1e3e4;
-  --on-surface-variant: #3d4946;
-  
-  --on-surface: #191c1d;
+  /* Semantic Colors */
+  --brand-on-surface: #191c1d;
+  --brand-on-surface-variant: #3d4946;
   --outline-variant: rgba(188, 201, 197, 0.15); /* 15% opacity outline fallback */
 
   --radius-sm: 0.25rem;
@@ -40,8 +39,8 @@
 }
 
 body {
-  background-color: var(--surface);
-  color: var(--on-surface);
+  background-color: var(--surface-bg);
+  color: var(--brand-on-surface);
   font-family: var(--font-jakarta);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -59,7 +58,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
   max-width: 600px; /* Mobile first feel */
   margin: 0 auto;
   min-height: 100vh;
-  background-color: var(--surface-container);
+  background-color: var(--surface-mid);
   position: relative;
   padding-bottom: 80px; /* Space for bottom nav */
 }
@@ -85,7 +84,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 /* Section specific no-line rule */
 .section {
   padding: 1.5rem;
-  background: var(--surface);
+  background: var(--surface-bg);
   margin-top: 1rem;
   border-radius: var(--radius-xl);
 }
@@ -106,7 +105,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 .body-lg {
   font-size: 1.125rem;
   line-height: 1.5;
-  color: var(--on-surface-variant);
+  color: var(--brand-on-surface-variant);
 }
 
 .body-md {
@@ -123,7 +122,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 
 /* Card Style (Pure White on Surface Container) */
 .product-card {
-  background: var(--surface-container-lowest);
+  background: var(--surface-pure);
   border-radius: var(--radius-xl);
   overflow: hidden;
   display: flex;
@@ -174,15 +173,15 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--secondary-container), var(--secondary));
+  background: linear-gradient(90deg, var(--brand-secondary-variant), var(--brand-secondary));
   border-radius: var(--radius-full);
   transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(90deg, var(--primary), var(--primary-container));
-  color: var(--on-primary);
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-variant));
+  color: var(--brand-on-primary);
   border: none;
   padding: 1rem 1.5rem;
   border-radius: var(--radius-md);
@@ -202,8 +201,8 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 }
 
 .btn-secondary {
-  background: var(--secondary-fixed);
-  color: var(--on-secondary-fixed);
+  background: var(--brand-secondary-variant);
+  color: var(--brand-on-secondary);
   border: none;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
@@ -213,8 +212,8 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 }
 
 .chip {
-  background: var(--surface-variant);
-  color: var(--on-surface);
+  background: var(--surface-low);
+  color: var(--brand-on-surface);
   padding: 0.4rem 1rem;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
@@ -224,8 +223,8 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 }
 
 .chip.active {
-  background: var(--on-surface);
-  color: var(--surface);
+  background: var(--brand-on-surface);
+  color: var(--surface-bg);
 }
 
 .chip-container {
@@ -255,8 +254,8 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 .gap-2 { gap: 0.5rem; }
 .gap-4 { gap: 1rem; }
 
-.text-primary { color: var(--primary); }
-.text-secondary { color: var(--secondary); }
+.text-primary { color: var(--brand-primary); }
+.text-secondary { color: var(--brand-secondary); }
 
 .bottom-nav {
   position: fixed;
@@ -281,7 +280,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  color: var(--on-surface-variant);
+  color: var(--brand-on-surface-variant);
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 600;
@@ -289,7 +288,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 }
 
 .nav-item.active {
-  color: var(--on-surface);
+  color: var(--brand-on-surface);
 }
 
 .nav-item svg {
@@ -304,7 +303,7 @@ h1, h2, h3, h4, h5, h6, .display-txt {
 
 /* Bottom Sheet Modal for Mobile */
 .mobile-bottom-sheet {
-  background: var(--surface);
+  background: var(--surface-bg);
   border-radius: 1.5rem 1.5rem 0 0;
   padding: 1.5rem;
   width: 100%;

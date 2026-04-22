@@ -74,27 +74,34 @@ export default function ProfilePage() {
 
       // Fetch existing profile data
       try {
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('restaurant_name, restaurant_address, phone_number, prologue, points, trust_score, level')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (error || !data) {
+        if (fetchError) {
+           console.error("VANGUARD: DB Retrieval Error", fetchError);
+           setMessage(`DB 연동 오류: ${fetchError.message}`);
+        }
+
+        const metadata = user.user_metadata || {};
+        
+        if (!data) {
           // Profile doesn't exist in DB yet! Initialize using Auth Metadata
-          const metadata = user.user_metadata || {};
           const initialProfile = {
             restaurant_name: metadata.restaurant_name || metadata.business_name || "",
             restaurant_address: metadata.restaurant_address || metadata.business_address || "",
             phone_number: metadata.phone_number || "",
             prologue: metadata.prologue || "",
             points: 0,
-            trust_score: 2.75, // Starting trust
+            trust_score: 2.75,
             level: 1
           };
 
           setProfile(initialProfile);
 
+          // Silent attempt to provision profile row
           await supabase.from('profiles').upsert({
             id: user.id,
             email: user.email,
@@ -102,19 +109,20 @@ export default function ProfilePage() {
             updated_at: new Date().toISOString()
           });
         } else {
-          // Sync DB data with UI
+          // Sync DB data with UI, prioritizing DB values but falling back to metadata if DB values are missing
           setProfile({
-            restaurant_name: data.restaurant_name || user.user_metadata?.restaurant_name || "",
-            restaurant_address: data.restaurant_address || user.user_metadata?.restaurant_address || "",
-            phone_number: data.phone_number || user.user_metadata?.phone_number || "",
-            prologue: data.prologue || user.user_metadata?.prologue || "",
+            restaurant_name: data.restaurant_name || metadata.restaurant_name || "",
+            restaurant_address: data.restaurant_address || metadata.restaurant_address || "",
+            phone_number: data.phone_number || metadata.phone_number || "",
+            prologue: data.prologue || metadata.prologue || "",
             points: data.points || 0,
             trust_score: data.trust_score || 2.75,
             level: data.level || 1
           });
         }
-      } catch (e) {
-        console.warn("VANGUARD: Profile load error", e);
+      } catch (e: any) {
+        console.warn("VANGUARD: Profile load exception", e);
+        setMessage("통신 장애가 발생했습니다. 잠시 후 다시 시도해 주세요.");
       }
 
       setLoading(false);

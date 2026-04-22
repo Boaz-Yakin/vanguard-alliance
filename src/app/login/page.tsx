@@ -25,7 +25,7 @@ export default function LoginPage() {
       loginTitle: "다시 오신 것을 환영합니다",
       signupTitle: "얼라이언스에 합류하세요",
       onboardingTitle: "매장 정보를 입력해주세요",
-      onboardingSubtitle: "공동구매 딜이 레스토랑 이름으로 등록됩니다",
+      onboardingSubtitle: "ufgo공동구매 딜이 레스토랑 이름으로 등록됩니다",
       email: "업무 이메일",
       password: "비밀번호",
       restaurantName: "매장명 (Business Name)",

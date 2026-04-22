@@ -5,6 +5,8 @@ import { DealService } from "@/services/dealService";
 import { supabase } from "@/lib/supabaseClient";
 import { GroupDeals } from "@/components/GroupDeals";
 import { GroupBuyingService } from "@/services/groupBuyingService";
+import { LoyaltyService } from "@/services/loyaltyService";
+import { DispatchService } from "@/services/dispatchService";
 
 // Helper: format ms remaining into a human-readable countdown
 function formatCountdown(expiresAt: string | undefined, lang: "ko" | "en"): { label: string; urgent: boolean } {
@@ -74,19 +76,34 @@ export default function Home() {
   };
 
   const handleModalConfirm = async () => {
-    if (!selectedDeal) return;
+    if (!selectedDeal || !user) return;
     setIsSubmitting(true);
 
-    // Optimistic UI Update based on user qty
-    setDeals(prev => prev.map(d => {
-      if (d.id === selectedDeal.id) {
-        return { ...d, currentVol: d.currentVol + qty };
-      }
-      return d;
-    }));
+    const deal = deals.find(d => d.id === selectedDeal.id);
+    const amount = qty * (deal?.price || 10); // Mock amount calculation
 
-    // Perform real DB transaction
+    // 1. Perform real DB transaction
     await DealService.joinDeal(selectedDeal.id, qty);
+    
+    // 2. [Integration] Grant Loyalty Rewards
+    const reward = await LoyaltyService.grantTransactionReward(user.id, amount);
+    if (reward) {
+      console.log(`[Loyalty] User reached Level ${reward.newLevel} with ${reward.newTrust} trust.`);
+      // In a real app, show a "Level Up" toast here
+    }
+
+    // 3. [Integration] Check for Dispatch Trigger (Phase 1.1)
+    const updatedDeal = await DealService.getDealById(selectedDeal.id);
+    if (updatedDeal && updatedDeal.currentVol >= updatedDeal.targetVol) {
+      await DispatchService.dispatch({
+        name: updatedDeal.supplierName || "Vanguard Vendor",
+        email: updatedDeal.supplierEmail || "vendor@vanguard.test",
+        preferredChannel: 'email'
+      }, {
+        subject: `[VANGUARD] Order Finalized: ${updatedDeal.title.en}`,
+        body: `Deal ${updatedDeal.id} has reached target volume of ${updatedDeal.targetVol} ${updatedDeal.unit}. Please fulfill.`
+      });
+    }
     
     setRefreshKey(prev => prev + 1); // Trigger GroupDeals refresh
     setIsSubmitting(false);
@@ -348,7 +365,7 @@ export default function Home() {
               {selectedDeal.title}
             </p>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
               <input 
                 type="number" 
                 min="1"
@@ -362,6 +379,24 @@ export default function Home() {
               />
               <span className="title-md" style={{ color: "var(--on-surface-variant)" }}>
                 {selectedDeal.unit}
+              </span>
+            </div>
+
+            {/* Reward Preview (Modular Loyalty Integration) */}
+            <div style={{ 
+              marginBottom: "1.5rem", 
+              padding: "8px 12px", 
+              background: "var(--surface-low)", 
+              borderRadius: "8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--brand-on-surface-variant)" }}>
+                {lang === "ko" ? "예상 적립 포인트" : "Expected Points"}
+              </span>
+              <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--brand-primary)" }}>
+                +{LoyaltyService.calculatePoints(qty * 25)} P
               </span>
             </div>
 

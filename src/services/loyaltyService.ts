@@ -1,29 +1,43 @@
 import { supabase } from "@/lib/supabaseClient";
+import { LOYALTY_CONFIG } from "@/config/loyaltyConfig";
 
 /**
- * Vanguard Special: Loyalty & Trust Score Engine
+ * Generic Loyalty & Trust Score Engine
+ * Decoupled from hardcoded domain logic.
  */
 export const LoyaltyService = {
   /**
-   * Points calculation: $1 = 1 Point. Bonus multiplier applied based on volume.
+   * Points calculation based on configurable thresholds.
    */
   calculatePoints(totalAmount: number): number {
-    let multiplier = 1.0;
-    if (totalAmount > 500) multiplier = 1.2;
-    if (totalAmount > 2000) multiplier = 1.5;
+    const { baseRate, thresholds } = LOYALTY_CONFIG.points;
+    let multiplier = baseRate;
+
+    // Find the highest applicable multiplier
+    for (const threshold of thresholds) {
+      if (totalAmount > threshold.minAmount) {
+        multiplier = threshold.multiplier;
+      }
+    }
     
     return Math.floor(totalAmount * multiplier);
   },
 
   /**
-   * Trust Score dynamic adjustment based on order volume.
-   * Trust Score dictates access to 'Elite' deals.
+   * Trust Score adjustment based on configurable boosts.
    */
   calculateTrustBoost(totalAmount: number): number {
-    if (totalAmount < 50) return 0.01;
-    if (totalAmount < 200) return 0.05;
-    if (totalAmount < 1000) return 0.15;
-    return 0.3; // High trust earned via bulk purchasing
+    const { boosts } = LOYALTY_CONFIG.trust;
+    
+    for (const boostRule of boosts) {
+      if ('maxAmount' in boostRule && typeof boostRule.maxAmount === 'number' && totalAmount < boostRule.maxAmount) {
+        return boostRule.boost;
+      }
+      if ('defaultBoost' in boostRule && typeof boostRule.defaultBoost === 'number') {
+        return boostRule.defaultBoost;
+      }
+    }
+    return 0.01; // Fallback
   },
 
   /**
@@ -43,15 +57,19 @@ export const LoyaltyService = {
 
     const newPoints = (profile.points || 0) + pointsToAdd;
     let newScore = Number(profile.trust_score || 0) + trustBoost;
-    if (newScore > 9.9) newScore = 9.9; // Max trust cap until manual KYC
-    if (newScore > 10.0) newScore = 10.0;
+    
+    // Apply caps from config
+    const { maxScore, softCap } = LOYALTY_CONFIG.trust;
+    if (newScore > softCap) newScore = softCap;
+    if (newScore > maxScore) newScore = maxScore;
 
-    // Tactical Level Progression Logic
+    // Generic Level Progression Logic
     let newLevel = profile.level || 1;
-    if (newPoints > 500 && newLevel === 1) newLevel = 2; // Bronze
-    if (newPoints > 2500 && newLevel === 2) newLevel = 3; // Silver
-    if (newPoints > 10000 && newLevel === 3) newLevel = 4; // Gold
-    if (newPoints > 50000 && newLevel === 4) newLevel = 5; // Vanguard Elite
+    for (const levelRule of LOYALTY_CONFIG.levels) {
+      if (newPoints >= levelRule.minPoints) {
+        newLevel = levelRule.level;
+      }
+    }
 
     await supabase
       .from("profiles")

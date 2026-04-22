@@ -114,8 +114,11 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                   position: "relative"
                 }}
               >
-                <div className="deal-badges" style={{ position: "absolute", bottom: "10px", left: "10px" }}>
-                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--secondary-container)", color: "var(--on-secondary-fixed)", padding: "4px 8px", borderRadius: "6px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
+                <div className="deal-badges" style={{ position: "absolute", bottom: "10px", left: "10px", display: "flex", gap: "0.5rem" }}>
+                  <span className="deal-discount" style={{ fontSize: "0.75rem", background: "var(--brand-secondary-variant)", color: "var(--brand-on-secondary)", padding: "4px 8px", borderRadius: "6px", fontWeight: 800 }}>{(currentRate * 100).toFixed(0)}% OFF</span>
+                  <span style={{ fontSize: "0.7rem", background: "rgba(255,255,255,0.9)", color: "var(--brand-primary)", padding: "4px 8px", borderRadius: "6px", fontWeight: 700, border: "1px solid var(--brand-primary-variant)" }}>
+                    +Bonus P
+                  </span>
                 </div>
               </div>
 
@@ -144,7 +147,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                         {/* Discount Label - MOVED TO TOP */}
                         <div style={{ 
                           position: "absolute", left: 0, top: "-18px", transform: "translateX(-50%)",
-                          fontSize: "0.65rem", fontWeight: 900, color: isReached ? "var(--primary)" : "var(--on-surface-variant)",
+                          fontSize: "0.65rem", fontWeight: 900, color: isReached ? "var(--brand-primary)" : "var(--brand-on-surface-variant)",
                           whiteSpace: "nowrap"
                         }}>
                           {(tier.rate * 100).toFixed(0)}%
