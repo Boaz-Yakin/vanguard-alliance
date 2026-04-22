@@ -304,7 +304,17 @@ export default function CommanderPage() {
         </section>
 
         <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
-          <h2 className="headline-md mb-4">할인 전략 (Tiers)</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <h2 className="headline-md">할인 전략 (Tiers)</h2>
+            <button 
+              type="button" 
+              onClick={() => setTiers([])}
+              className="btn-secondary"
+              style={{ padding: "4px 12px", fontSize: "0.8rem", color: "var(--error)" }}
+            >
+              전체 삭제
+            </button>
+          </div>
           <div className="flex-col gap-4">
             {tiers.map((tier, index) => (
               <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 40px", gap: "1rem", alignItems: "center" }}>
@@ -378,7 +388,17 @@ export default function CommanderPage() {
             </div>
             
             <div className="flex-col gap-2">
-              <label className="label-md">이미지 URL 직접 입력</label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className="label-md">이미지 URL 직접 입력</label>
+                <button 
+                  type="button"
+                  onClick={() => setForm({...form, image_url: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Egg_1.jpg"})}
+                  className="btn-secondary"
+                  style={{ padding: "2px 8px", fontSize: "0.7rem" }}
+                >
+                  🥚 달걀 이미지 자동 입력
+                </button>
+              </div>
               <input 
                 className="commander-input"
                 value={form.image_url}
