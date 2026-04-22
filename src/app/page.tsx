@@ -33,7 +33,7 @@ export default function Home() {
   
   // Modal States
   const [selectedDeal, setSelectedDeal] = useState<{id: string, unit: string, title: string} | null>(null);
-  const [qty, setQty] = useState<number>(1);
+  const [qty, setQty] = useState<number | "">(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -80,10 +80,11 @@ export default function Home() {
     setIsSubmitting(true);
 
     const deal = deals.find(d => d.id === selectedDeal.id);
-    const amount = qty * (deal?.price || 10); // Mock amount calculation
+    const finalQty = typeof qty === 'number' ? qty : 1;
+    const amount = finalQty * (deal?.price || 10); // Mock amount calculation
 
     // 1. Perform real DB transaction
-    await DealService.joinDeal(selectedDeal.id, qty);
+    await DealService.joinDeal(selectedDeal.id, finalQty);
     
     // 2. [Integration] Grant Loyalty Rewards
     const reward = await LoyaltyService.grantTransactionReward(user.id, amount);
@@ -370,7 +371,7 @@ export default function Home() {
                 type="number" 
                 min="1"
                 value={qty}
-                onChange={(e) => setQty(Number(e.target.value) || 1)}
+                onChange={(e) => setQty(e.target.value === "" ? "" : Number(e.target.value))}
                 style={{
                   flex: 1, padding: "12px", borderRadius: "0.5rem",
                   border: "1px solid var(--outline-variant)",
@@ -396,7 +397,7 @@ export default function Home() {
                 {lang === "ko" ? "예상 적립 포인트" : "Expected Points"}
               </span>
               <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--brand-primary)" }}>
-                +{LoyaltyService.calculatePoints(qty * 25)} P
+                +{LoyaltyService.calculatePoints((Number(qty) || 1) * 25)} P
               </span>
             </div>
 
