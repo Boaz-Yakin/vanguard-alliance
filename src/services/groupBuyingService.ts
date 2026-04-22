@@ -13,6 +13,7 @@ export interface AllianceDeal {
   status: "active" | "completed";
   supplierName: string;
   expiresIn: string;
+  expiresAt: string; // ISO string for client-side countdown
   pricePerUnit: number;
   is_private?: boolean;
   imageUrl?: string;
@@ -51,6 +52,7 @@ export const GroupBuyingService = {
       status: d.status,
       supplierName: d.suppliers?.name || "Alliance Supplier",
       expiresIn: this.formatExpiry(d.expires_at),
+      expiresAt: d.expires_at,
       pricePerUnit: Number(d.price_per_unit),
       is_private: d.is_private,
       imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300",

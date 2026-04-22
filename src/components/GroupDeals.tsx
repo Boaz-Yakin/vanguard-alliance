@@ -38,6 +38,8 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
     }
   }[lang];
 
+  const [now, setNow] = useState(new Date());
+  
   useEffect(() => {
     const fetchDeals = async () => {
       const data = await GroupBuyingService.getActiveDeals(trustScore);
@@ -46,16 +48,34 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
     };
     fetchDeals();
 
-    // Simulation: Global Volume Activity every 15s
-    const interval = setInterval(() => {
+    const volumeInterval = setInterval(() => {
       setDeals(prev => prev.map(deal => ({
         ...deal,
         currentVolume: Math.min(deal.targetVolume, deal.currentVolume + (Math.random() > 0.8 ? Math.floor(Math.random() * 8) : 0))
       })));
     }, 15000);
 
-    return () => clearInterval(interval);
+    const timerInterval = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => {
+      clearInterval(volumeInterval);
+      clearInterval(timerInterval);
+    };
   }, [trustScore, refreshKey]);
+
+  const calculateTimeLeft = (expiryDate: string) => {
+    const diff = new Date(expiryDate).getTime() - now.getTime();
+    if (diff <= 0) return "EXPIRED";
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  };
 
   /**
    * Calculate User's current contribution from textarea
@@ -176,7 +196,7 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
 
               <div className="deal-footer" style={{ marginTop: "0.5rem", paddingTop: "1rem", borderTop: "1px solid var(--outline-variant)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div className="deal-timer" style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", fontWeight: 600 }}>
-                  <span className="timer-value">{deal.expiresIn}</span>
+                  <span className="timer-value">{calculateTimeLeft(deal.expiresAt)}</span>
                 </div>
                 <button 
                   className="btn-primary join-btn"
