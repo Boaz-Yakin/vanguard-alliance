@@ -29,46 +29,48 @@ export const GroupBuyingService = {
    */
   async getActiveDeals(trustScore: number = 0): Promise<AllianceDeal[]> {
     console.log("[VANGUARD] Fetching active alliance deals...");
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    try {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-    const { data: dbDeals, error } = await supabase
-      .from('deals')
-      .select('*, suppliers(name), deal_tiers(*)')
-      .in('status', ['active', 'completed'])
-      .gt('expires_at', threeDaysAgo.toISOString())
-      .order('created_at', { ascending: false });
+      const { data: dbDeals, error } = await supabase
+        .from('deals')
+        .select('*, deal_tiers(*)')
+        .in('status', ['active', 'completed'])
+        .gt('expires_at', threeDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
 
-    if (error) {
-       console.error("[VANGUARD] DB Error in GroupBuyingService:", error);
-       return [];
+      if (error) {
+        console.error("[VANGUARD] DB Error in GroupBuyingService:", error.message, error.details);
+        return [];
+      }
+
+      console.log(`[VANGUARD] Found ${dbDeals?.length || 0} alliance deals in DB.`);
+
+      if (!dbDeals || dbDeals.length === 0) return [];
+
+      const deals: AllianceDeal[] = dbDeals.map((d: any) => ({
+        id: d.id,
+        itemName: d.item_name,
+        itemNameEn: d.item_name_en || d.item_name,
+        currentVolume: Number(d.current_volume),
+        targetVolume: Number(d.target_volume),
+        status: d.status,
+        supplierName: d.suppliers?.name || "Alliance Supplier",
+        expiresIn: this.formatExpiry(d.expires_at),
+        expiresAt: d.expires_at,
+        pricePerUnit: Number(d.price_per_unit),
+        unit: d.unit || 'unit',
+        is_private: d.is_private,
+        imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300",
+        tiers: d.deal_tiers?.map((t: any) => ({ threshold: t.threshold_pct, rate: t.discount_rate })) || []
+      }));
+
+      return deals;
+    } catch (e: any) {
+      console.error("[VANGUARD] Critical failure in GroupBuyingService:", e?.message || e);
+      return [];
     }
-
-    console.log(`[VANGUARD] Found ${dbDeals?.length || 0} deals in DB.`);
-
-    if (!dbDeals || dbDeals.length === 0) {
-       return [];
-    }
-
-    const deals: AllianceDeal[] = dbDeals.map((d: any) => ({
-      id: d.id,
-      itemName: d.item_name,
-      itemNameEn: d.item_name_en || d.item_name,
-      currentVolume: Number(d.current_volume),
-      targetVolume: Number(d.target_volume),
-      status: d.status,
-      supplierName: d.suppliers?.name || "Alliance Supplier",
-      expiresIn: this.formatExpiry(d.expires_at),
-      expiresAt: d.expires_at,
-      pricePerUnit: Number(d.price_per_unit),
-      unit: d.unit || 'unit',
-      is_private: d.is_private,
-      imageUrl: d.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400&h=300",
-      tiers: d.deal_tiers?.map((t: any) => ({ threshold: t.threshold_pct, rate: t.discount_rate })) || []
-    }));
-
-    // DEVELOPER OVERRIDE: Temporarily show all deals regardless of trust score for verification
-    return deals;
   },
 
   formatExpiry(dateStr: string): string {
