@@ -289,6 +289,7 @@ export default function Home() {
         <div className="flex-col gap-4">
           {filteredDeals.map((deal) => {
             const isCompleted = deal.currentVolume >= deal.targetVolume || new Date(deal.expiresAt) < new Date() || deal.status === 'completed';
+            const isEliteOnly = deal.is_private && userLevel < 5;
             const countdown = isCompleted ? { urgent: false, label: lang === "ko" ? "조기 마감" : "Closed" } : formatCountdown(deal.expiresAt, lang);
             return (
             <div key={deal.id} className="product-card" style={{ opacity: isCompleted ? 0.7 : 1, position: "relative" }}>
@@ -378,11 +379,19 @@ export default function Home() {
 
                 <button 
                   className="btn-primary mt-4" 
-                  style={{ width: "100%" }}
+                  style={{ 
+                    width: "100%",
+                    background: isEliteOnly ? "var(--surface-variant)" : "",
+                    color: isEliteOnly ? "var(--on-surface-variant)" : ""
+                  }}
                   onClick={() => handleParticipateClick(deal)}
-                  disabled={deal.currentVolume >= deal.targetVolume}
+                  disabled={isCompleted || isEliteOnly}
                 >
-                  {deal.currentVolume >= deal.targetVolume ? (lang === "ko" ? "마감됨" : "Closed") : t.participate}
+                  {isCompleted 
+                    ? (lang === "ko" ? "마감됨" : "Closed") 
+                    : isEliteOnly 
+                      ? (lang === "ko" ? "엘리트 전용" : "Elite Only") 
+                      : t.participate}
                 </button>
               </div>
             </div>
