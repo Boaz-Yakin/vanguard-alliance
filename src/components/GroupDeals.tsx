@@ -136,14 +136,15 @@ export const GroupDeals = ({ lang, onJoin, parsedItems = [], trustScore = 0, ref
                 </div>
               
               <div className="progress-container" style={{ gap: "0.3rem" }}>
-                <div className="progress-bar" style={{ height: "14px", background: "var(--surface-container-high)", borderRadius: "7px", position: "relative", marginTop: "20px", overflow: "visible", border: "1px solid var(--outline-variant)" }}>
+                <div className="progress-bar" style={{ height: "16px", background: "#e0e0e0", borderRadius: "8px", position: "relative", marginTop: "20px", overflow: "visible", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.2)" }}>
                   <div className="progress-fill" style={{ 
                     width: `${baseProgress}%`, 
-                    background: `linear-gradient(90deg, var(--primary) 0%, ${baseProgress > 80 ? 'var(--tertiary)' : 'var(--primary-fixed-dim)'} 100%)`, 
-                    height: "100%", position: "absolute", left: 0, zIndex: 1, borderRadius: "6px",
-                    transition: "width 0.5s ease-out, background 0.5s ease"
+                    background: baseProgress > 80 ? "linear-gradient(90deg, #007bff 0%, #ffc107 100%)" : "#007bff", 
+                    height: "100%", position: "absolute", left: 0, zIndex: 1, borderRadius: "8px",
+                    transition: "width 0.5s ease-out",
+                    boxShadow: "0 0 10px rgba(0,123,255,0.3)"
                   }}></div>
-                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "var(--secondary)", height: "100%", position: "absolute", zIndex: 1 }}></div>}
+                  {myProgress > 0 && <div className="my-progress-fill" style={{ left: `${baseProgress}%`, width: `${myProgress}%`, background: "#28a745", height: "100%", position: "absolute", zIndex: 1 }}></div>}
                   
                   {/* High-Contrast Tier Dividers (Separated Top/Bottom) */}
                   {deal.tiers.map((tier, idx) => {
