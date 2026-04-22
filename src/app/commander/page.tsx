@@ -162,13 +162,6 @@ export default function CommanderPage() {
         <p className="body-lg mb-8">
           {user ? `접속 권한이 없습니다. (${user.email})` : "사령부 접속을 위해 관리자 인증이 필요합니다."}
         </p>
-        <button 
-          onClick={() => window.location.href = user ? "/" : "/login"}
-          className="btn-primary"
-          style={{ padding: "1rem 2rem" }}
-        >
-          {user ? "홈으로 돌아가기" : "관리자 로그인"}
-        </button>
       </div>
     );
   }
@@ -178,16 +171,26 @@ export default function CommanderPage() {
       <header className="flex justify-between items-start mb-8 commander-header">
         <div>
           <h1 className="display-lg text-primary">VANGUARD COMMAND</h1>
-          <p className="body-lg">{editingId ? "작전을 수정 중입니다 (ID: " + editingId.slice(0,8) + ")" : "새로운 공동구매 작전을 개시하십시오."}</p>
+          <p className="body-lg">{editingId ? "작전을 수정 중입니다 (ID: " + editingId.slice(0,8) + ")" : "사령부 작전 통제 센터에 접속하셨습니다."}</p>
         </div>
-        <div className="flex gap-2 commander-header-buttons">
+        <div className="flex gap-2 commander-header-buttons" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {!editingId && (
+            <button 
+              type="button"
+              onClick={() => document.getElementById('new-deal-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="btn-primary"
+              style={{ padding: "0.5rem 1.5rem", background: "#0056b3", color: "white", borderRadius: "8px" }}
+            >
+              ➕ 새 작전 등록
+            </button>
+          )}
           {editingId && (
             <>
               <button 
                 type="button"
                 onClick={() => handleDelete(editingId)}
                 className="btn-secondary"
-                style={{ padding: "0.5rem 1rem", background: "var(--error)", color: "white", borderColor: "var(--error)" }}
+                style={{ padding: "0.5rem 1rem", background: "#ff4444", color: "white", borderColor: "#ff4444", borderRadius: "8px", fontWeight: "bold" }}
               >
                 🗑️ 작전 폐기
               </button>
@@ -195,7 +198,7 @@ export default function CommanderPage() {
                 type="button"
                 onClick={() => { setEditingId(null); setForm(initialForm); }}
                 className="btn-outline"
-                style={{ padding: "0.5rem 1rem", borderColor: "var(--error)", color: "#d32f2f" }}
+                style={{ padding: "0.5rem 1rem", borderColor: "#666", color: "#666", borderRadius: "8px" }}
               >
                 편집 취소
               </button>
@@ -212,9 +215,65 @@ export default function CommanderPage() {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="flex-col gap-4">
-        <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
-          <h2 className="headline-md mb-4">기본 정보</h2>
+      {/* TOP SECTION: Current Operations Control */}
+      <section className="section mb-8" style={{ background: "var(--surface-container-high)", border: "2px solid var(--primary-fixed-dim)" }}>
+        <h2 className="headline-md mb-6" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          📡 진행 중인 작전 관제 (Current Operations)
+        </h2>
+        
+        <div className="flex-col gap-8">
+          {/* Public Deals */}
+          <div>
+            <h3 className="title-lg mb-4" style={{ color: "var(--primary)", borderBottom: "1px solid var(--outline-variant)", paddingBottom: "0.5rem" }}>
+              🌐 일반 공개 작전
+            </h3>
+            <div className="flex-col gap-3">
+              {existingDeals.filter(d => !d.is_private).map(deal => (
+                <div key={deal.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.2rem", background: "var(--surface)", borderRadius: "var(--radius-md)", border: "1px solid var(--outline-variant)", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
+                  <img src={deal.image_url} style={{ width: "60px", height: "60px", borderRadius: "8px", objectFit: "contain", background: "white", border: "1px solid var(--outline-variant)" }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="title-lg">{deal.item_name}</div>
+                    <div className="body-md" style={{ opacity: 0.7 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "8px 16px" }}>편집</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", fontWeight: "bold" }}>🗑️ 즉시 삭제</button>
+                  </div>
+                </div>
+              ))}
+              {existingDeals.filter(d => !d.is_private).length === 0 && <p className="body-md p-6" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 공개 작전이 없습니다.</p>}
+            </div>
+          </div>
+
+          {/* Elite Deals */}
+          <div>
+            <h3 className="title-lg mb-4" style={{ color: "var(--tertiary)", borderBottom: "1px solid var(--outline-variant)", paddingBottom: "0.5rem" }}>
+              🛡️ 엘리트 동맹 전용 기밀 작전
+            </h3>
+            <div className="flex-col gap-3">
+              {existingDeals.filter(d => d.is_private).map(deal => (
+                <div key={deal.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.2rem", background: "var(--primary-container)", borderRadius: "var(--radius-md)", border: "1px solid var(--primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                  <img src={deal.image_url} style={{ width: "60px", height: "60px", borderRadius: "8px", objectFit: "contain", background: "white" }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="title-lg" style={{ color: "var(--on-primary-container)" }}>{deal.item_name}</div>
+                    <div className="body-md" style={{ color: "var(--on-primary-container)", opacity: 0.8 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "8px 16px", background: "white" }}>편집</button>
+                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "8px 16px", color: "var(--error)", borderColor: "var(--error)", background: "white", fontWeight: "bold" }}>🗑️ 즉시 삭제</button>
+                  </div>
+                </div>
+              ))}
+              {existingDeals.filter(d => d.is_private).length === 0 && <p className="body-md p-6" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 비공개 전용 작전이 없습니다.</p>}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BOTTOM SECTION: New/Edit Operation Form */}
+      <form id="new-deal-section" onSubmit={handleSubmit} className="flex-col gap-4">
+        <section className="section" style={{ background: "var(--surface-container-lowest)", border: "1px solid var(--outline-variant)" }}>
+          <h2 className="headline-md mb-4">{editingId ? "🛠️ 작전 세부 수정" : "🎯 새로운 작전 설계"}</h2>
           
           <div className="flex-col gap-2 mb-4">
             <label className="label-md">아이템 이름 (KO)</label>
@@ -260,6 +319,7 @@ export default function CommanderPage() {
                 onChange={e => setForm({...form, supplier_id: e.target.value})}
                 required
               >
+                <option value="">공급사 선택</option>
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -287,7 +347,7 @@ export default function CommanderPage() {
           </div>
         </section>
 
-        <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
+        <section className="section" style={{ background: "var(--surface-container-lowest)", border: "1px solid var(--outline-variant)" }}>
           <h2 className="headline-md mb-4">전략적 가격 및 물량</h2>
           
           <div className="commander-grid mb-4">
@@ -337,7 +397,7 @@ export default function CommanderPage() {
           </div>
         </section>
 
-        <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
+        <section className="section" style={{ background: "var(--surface-container-lowest)", border: "1px solid var(--outline-variant)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h2 className="headline-md">할인 전략 (Tiers)</h2>
             <button 
@@ -398,7 +458,7 @@ export default function CommanderPage() {
           </div>
         </section>
 
-        <section className="section" style={{ background: "var(--surface-container-lowest)" }}>
+        <section className="section" style={{ background: "var(--surface-container-lowest)", border: "1px solid var(--outline-variant)" }}>
           <h2 className="headline-md mb-4">이미지 자산</h2>
           <div className="flex-col gap-4">
             <div style={{ 
@@ -439,49 +499,9 @@ export default function CommanderPage() {
           style={{ padding: "1.5rem", fontSize: "1.2rem", marginTop: "1rem" }}
           disabled={loading}
         >
-          {loading ? "전략 전송 중..." : (editingId ? "작전 수정 (업데이트)" : "작전 개시 (아이템 게시)")}
+          {loading ? "전략 전송 중..." : (editingId ? "작전 수정 완료 (업데이트)" : "새로운 작전 개시 (아이템 게시)")}
         </button>
-      </form>
-
-      <section className="section mt-8" style={{ background: "var(--surface-container-lowest)" }}>
-        <h2 className="headline-md mb-6">📢 작전 가시성 관제 (Exposure Control)</h2>
-        
-        <div className="flex-col gap-8">
-          {/* Section 1: Public Deals */}
-          <div>
-            <h3 className="title-lg mb-3" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1.2rem" }}>🌐</span> 일반 공개 작전 (Public Hot Deals)
-            </h3>
-            <div className="flex-col gap-3">
-              {existingDeals.filter(d => !d.is_private).map(deal => (
-                <div key={deal.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", background: "var(--surface)", borderRadius: "var(--radius-md)", border: "1px solid var(--outline-variant)", flexWrap: "wrap" }}>
-                  <img src={deal.image_url} style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />
-                  <div style={{ flex: 1, minWidth: "150px" }}>
-                    <div className="title-md">{deal.item_name}</div>
-                    <div className="body-sm" style={{ opacity: 0.7 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem" }}>편집</button>
-                    <button onClick={() => handleDelete(deal.id)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", color: "var(--error)", borderColor: "var(--error)" }}>삭제</button>
-                  </div>
-                </div>
-              ))}
-              {existingDeals.filter(d => !d.is_private).length === 0 && <p className="body-md p-4" style={{ opacity: 0.5, textAlign: "center", border: "1px dashed var(--outline-variant)", borderRadius: "8px" }}>진행 중인 공개 작전이 없습니다.</p>}
-            </div>
-          </div>
-
-          {/* Section 2: Elite Private Deals */}
-          <div>
-            <h3 className="title-lg mb-3" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1.2rem" }}>🛡️</span> 엘리트 동맹 전용 작전 (Elite Alliance Only)
-            </h3>
-            <div className="flex-col gap-3">
-              {existingDeals.filter(d => d.is_private).map(deal => (
-                <div key={deal.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem", background: "var(--primary-container)", borderRadius: "var(--radius-md)", border: "1px solid var(--primary)", flexWrap: "wrap" }}>
-                  <img src={deal.image_url} style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />
-                  <div style={{ flex: 1, minWidth: "150px" }}>
-                    <div className="title-md" style={{ color: "var(--on-primary-container)" }}>{deal.item_name}</div>
-                    <div className="body-sm" style={{ color: "var(--on-primary-container)", opacity: 0.7 }}>{deal.suppliers?.name} | ${deal.price_per_unit}</div>
+      </form>${deal.price_per_unit}</div>
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button onClick={() => handleEdit(deal)} className="btn-secondary" style={{ padding: "6px 12px", fontSize: "0.85rem", background: "white" }}>편집</button>
