@@ -87,6 +87,11 @@ export default function CommanderPage() {
     const expires_at = new Date();
     expires_at.setDate(expires_at.getDate() + form.expires_in_days);
 
+    if (!form.supplier_id) {
+      alert("공급사를 선택해 주세요. (Supplier selection is required)");
+      return;
+    }
+
     const input: CreateDealInput = {
       ...form,
       expires_at: expires_at.toISOString(),
