@@ -55,17 +55,20 @@ export default function Home() {
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
-  // Load Deals
-  useEffect(() => {
-    async function loadDeals() {
-      const dbDeals = await DealService.getActiveDeals();
-      setDeals(dbDeals);
-      setLoading(false);
-    }
-    loadDeals();
-  }, [refreshKey]);
 
-  // Auth State (Run once)
+  // Stable deal loader
+  const loadDeals = useCallback(async () => {
+    const dbDeals = await DealService.getActiveDeals();
+    setDeals(dbDeals);
+    setLoading(false);
+  }, []);
+
+  // Load Deals on mount and on refreshKey change
+  useEffect(() => {
+    loadDeals();
+  }, [refreshKey, loadDeals]);
+
+  // Auth State (Run once) — also reload deals on auth change
   useEffect(() => {
     async function checkUser() {
       const { data } = await supabase.auth.getUser();
@@ -89,7 +92,7 @@ export default function Home() {
     }
     checkUser();
 
-    // Listen to Auth Changes
+    // Listen to Auth Changes — reload deals when user logs in/out
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
       setUser(session?.user || null);
       if (session?.user) {
@@ -111,12 +114,14 @@ export default function Home() {
         setTrustScore(0);
         setUserLevel(1);
       }
+      // Re-fetch deals after auth state change to prevent empty feed
+      loadDeals();
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [loadDeals]);
 
   const handleParticipateClick = (deal: any) => {
     if (!user) {
