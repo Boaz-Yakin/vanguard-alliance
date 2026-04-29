@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DealService } from "@/services/dealService";
 import { supabase } from "@/lib/supabaseClient";
 import { LoyaltyService } from "@/services/loyaltyService";
@@ -56,72 +56,72 @@ export default function Home() {
     return () => clearInterval(id);
   }, []);
 
-  // Stable deal loader
-  const loadDeals = useCallback(async () => {
-    const dbDeals = await DealService.getActiveDeals();
-    setDeals(dbDeals);
-    setLoading(false);
-  }, []);
-
-  // Load Deals on mount and on refreshKey change
+  // Load Deals — independent of auth state
   useEffect(() => {
-    loadDeals();
-  }, [refreshKey, loadDeals]);
-
-  // Auth State (Run once) — also reload deals on auth change
-  useEffect(() => {
-    async function checkUser() {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-      if (data.user) {
-        // Admin override: always grant max privileges
-        if (data.user.email === 'boaznyakin@gmail.com') {
-          setTrustScore(9.99);
-          setUserLevel(5);
-        } else {
-          const profile = await LoyaltyService.getProfile(data.user.id);
-          if (profile) {
-            setTrustScore(profile.trust_score || 0);
-            setUserLevel(profile.level || 1);
-          }
+    let cancelled = false;
+    async function loadDeals() {
+      try {
+        const dbDeals = await DealService.getActiveDeals();
+        if (!cancelled) {
+          setDeals(dbDeals);
         }
-      } else {
-        setTrustScore(0);
-        setUserLevel(1);
+      } catch (e) {
+        console.error("[VANGUARD] Failed to load deals:", e);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    checkUser();
+    loadDeals();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
-    // Listen to Auth Changes — reload deals when user logs in/out
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event: string, session: any) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        // Admin override: always grant max privileges
-        if (session.user.email === 'boaznyakin@gmail.com') {
-          setTrustScore(9.99);
-          setUserLevel(5);
-        } else {
-          const profile = await LoyaltyService.getProfile(session.user.id);
-          if (profile) {
-            setTrustScore(profile.trust_score || 0);
-            setUserLevel(profile.level || 1);
-          } else {
-            setTrustScore(0);
-            setUserLevel(1);
-          }
-        }
-      } else {
-        setTrustScore(0);
-        setUserLevel(1);
+  // Auth State — completely separate from deals loading
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUserProfile(u: any) {
+      if (!u) {
+        if (mounted) { setTrustScore(0); setUserLevel(1); }
+        return;
       }
-      // Re-fetch deals after auth state change to prevent empty feed
-      loadDeals();
+      if (u.email === 'boaznyakin@gmail.com') {
+        if (mounted) { setTrustScore(9.99); setUserLevel(5); }
+        return;
+      }
+      try {
+        const profile = await LoyaltyService.getProfile(u.id);
+        if (mounted && profile) {
+          setTrustScore(profile.trust_score || 0);
+          setUserLevel(profile.level || 1);
+        }
+      } catch (e) {
+        console.warn("[VANGUARD] Could not load profile:", e);
+      }
+    }
+
+    // Initial check
+    supabase.auth.getUser().then(({ data }: { data: any }) => {
+      if (mounted) {
+        setUser(data.user);
+        loadUserProfile(data.user);
+      }
+    });
+
+    // Listen to Auth Changes — does NOT reload deals
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      if (!mounted) return;
+      const u = session?.user || null;
+      setUser(u);
+      loadUserProfile(u);
     });
 
     return () => {
+      mounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, [loadDeals]);
+  }, []);
 
   const handleParticipateClick = (deal: any) => {
     if (!user) {
