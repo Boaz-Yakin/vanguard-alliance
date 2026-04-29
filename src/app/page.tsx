@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { DealService } from "@/services/dealService";
 import { supabase } from "@/lib/supabaseClient";
-import { GroupDeals } from "@/components/GroupDeals";
-import { GroupBuyingService } from "@/services/groupBuyingService";
 import { LoyaltyService } from "@/services/loyaltyService";
 import { DispatchService } from "@/services/dispatchService";
 
@@ -22,6 +20,18 @@ function formatCountdown(expiresAt: string | undefined, lang: "ko" | "en"): { la
   if (hours < 24) return { label: lang === "ko" ? `${hours}시간 남음` : `${hours}h left`, urgent: hours < 6 };
   const days = Math.floor(hours / 24);
   return { label: lang === "ko" ? `${days}일 남음` : `${days}d left`, urgent: false };
+}
+
+// Helper: calculate current discount rate from deal tiers
+function getCurrentDiscountRate(deal: { currentVolume: number; targetVolume: number; tiers?: { threshold: number; rate: number }[] }): number {
+  if (!deal.tiers || !Array.isArray(deal.tiers)) return 0;
+  const progress = deal.currentVolume / deal.targetVolume;
+  let applicableRate = 0;
+  const sortedTiers = [...deal.tiers].sort((a, b) => a.threshold - b.threshold);
+  for (const tier of sortedTiers) {
+    if (progress >= tier.threshold) applicableRate = tier.rate;
+  }
+  return applicableRate;
 }
 
 export default function Home() {
@@ -132,7 +142,6 @@ export default function Home() {
     const reward = await LoyaltyService.grantTransactionReward(user.id, amount);
     if (reward) {
       console.log(`[Loyalty] User reached Level ${reward.newLevel} with ${reward.newTrust} trust.`);
-      // In a real app, show a "Level Up" toast here
     }
 
     // 3. [Integration] Check for Dispatch Trigger (Phase 1.1)
@@ -148,17 +157,9 @@ export default function Home() {
       });
     }
     
-    setRefreshKey(prev => prev + 1); // Trigger GroupDeals refresh
+    setRefreshKey(prev => prev + 1);
     setIsSubmitting(false);
     setSelectedDeal(null);
-  };
-
-  const handleGroupDealJoin = (dealId: string, itemName: string, quantity: string) => {
-    // Open modal with prefilled data for Alliance deal
-    const unit = quantity.replace(/[0-9.\s]/g, '') || 'lb';
-    const qtyNum = parseFloat(quantity) || 1;
-    setSelectedDeal({ id: dealId, unit, title: itemName });
-    setQty(qtyNum);
   };
 
   const handleSignOut = async () => {
@@ -188,7 +189,7 @@ export default function Home() {
       navTitle: "VANGUARD ALLIANCE",
       hotDeals: "This Week's Hot Deals 🔥",
       hotDealsSub: "Join now for up to 24% off",
-      participate: "Join Collective Deal",
+      participate: "Join Group Buy",
       navHome: "Home",
       navHistory: "History",
       navProfile: user ? "Profile" : "Sign In",
@@ -264,17 +265,6 @@ export default function Home() {
 
       {/* Feed Section */}
       <div style={{ padding: "0 1.5rem" }}>
-        
-        {/* Alliance Syndicate Deals (Phase 2) */}
-        <div style={{ marginBottom: "2rem" }}>
-          <GroupDeals 
-            lang={lang} 
-            onJoin={handleGroupDealJoin}
-            trustScore={trustScore} 
-            userLevel={userLevel}
-            refreshKey={refreshKey}
-          />
-        </div>
 
         {/* Banner */}
         <div className="section" style={{ background: "var(--surface-container-lowest)", marginBottom: "1.5rem", padding: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "var(--ambient-shadow)" }}>
@@ -285,12 +275,13 @@ export default function Home() {
           <div style={{ fontSize: "2.5rem" }}>📦</div>
         </div>
 
-        {/* Product List */}
+        {/* Unified Group Buy List */}
         <div className="flex-col gap-4">
           {filteredDeals.map((deal) => {
             const isCompleted = deal.currentVolume >= deal.targetVolume || new Date(deal.expiresAt) < new Date() || deal.status === 'completed';
             const isEliteOnly = deal.is_private && userLevel < 5;
             const countdown = isCompleted ? { urgent: false, label: lang === "ko" ? "조기 마감" : "Closed" } : formatCountdown(deal.expiresAt, lang);
+            const discountRate = getCurrentDiscountRate(deal);
             return (
             <div key={deal.id} className="product-card" style={{ opacity: isCompleted ? 0.7 : 1, position: "relative" }}>
               {isCompleted && (
@@ -334,7 +325,7 @@ export default function Home() {
                   fontSize: "0.85rem", fontWeight: 800,
                   boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                 }}>
-                  -{(GroupBuyingService.getCurrentDiscountRate(deal as any) * 100).toFixed(0)}%
+                  -{(discountRate * 100).toFixed(0)}%
                 </div>
               </div>
               <div className="card-content">
