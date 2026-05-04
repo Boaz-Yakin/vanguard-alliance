@@ -40,6 +40,7 @@ export default function MyDealsPage() {
       colDate: "참여일",
       statActive: "진행중",
       statClosed: "마감",
+      back: "뒤로",
     },
     en: {
       title: "My Big Deals",
@@ -56,6 +57,7 @@ export default function MyDealsPage() {
       colDate: "Joined",
       statActive: "Active",
       statClosed: "Closed",
+      back: "Back",
     }
   }[lang];
 
@@ -185,25 +187,29 @@ export default function MyDealsPage() {
   return (
     <div className="container" style={{ paddingBottom: "100px" }}>
       {/* Top Nav */}
-      <nav className="top-nav">
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <a href="/" style={{ color: "var(--on-surface)", textDecoration: "none", fontWeight: 700 }}>←</a>
-          <div>
-            <h1 className="top-nav-title display-txt">{t.title}</h1>
-            <p className="label-md" style={{ color: "var(--on-surface-variant)", margin: 0 }}>{t.subtitle}</p>
-          </div>
+      <nav className="top-nav" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+        <div style={{ justifySelf: "start" }}>
+          <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "var(--on-surface)", textDecoration: "none", fontWeight: 700 }}>
+            ← <span style={{ fontSize: "0.9rem" }}>{t.back}</span>
+          </a>
         </div>
-        <button
-          onClick={() => setLang(lang === "ko" ? "en" : "ko")}
-          style={{
-            background: "var(--surface-variant)", border: "1px solid var(--outline-variant)",
-            borderRadius: "var(--radius-md)", padding: "4px 10px",
-            cursor: "pointer", fontWeight: "700", fontSize: "0.8rem",
-            color: "var(--on-surface-variant)"
-          }}
-        >
-          {lang === "ko" ? "EN" : "KR"}
-        </button>
+        <div style={{ textAlign: "center" }}>
+          <h1 className="top-nav-title display-txt">{t.title}</h1>
+          <p className="label-md" style={{ color: "var(--on-surface-variant)", margin: 0 }}>{t.subtitle}</p>
+        </div>
+        <div style={{ justifySelf: "end" }}>
+          <button
+            onClick={() => setLang(lang === "ko" ? "en" : "ko")}
+            style={{
+              background: "var(--surface-variant)", border: "1px solid var(--outline-variant)",
+              borderRadius: "var(--radius-md)", padding: "4px 10px",
+              cursor: "pointer", fontWeight: "700", fontSize: "0.8rem",
+              color: "var(--on-surface-variant)"
+            }}
+          >
+            {lang === "ko" ? "EN" : "KR"}
+          </button>
+        </div>
       </nav>
 
       <div style={{ padding: "0 1.5rem" }}>
