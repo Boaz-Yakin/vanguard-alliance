@@ -268,30 +268,31 @@ export default function MyDealsPage() {
                           ? (lang === "ko" ? "주문 취소됨" : "Cancelled")
                           : (deal.status === "dispatched" ? t.statClosed : t.statActive)}
                       </span>
-                      {/* Cancellation logic maintained but deposit badge removed */}
-                      <button 
-                        onClick={() => handleDownloadInvoice(deal)}
-                        className="btn-text"
-                        style={{ 
-                          fontSize: "0.7rem", padding: "4px 8px", color: "var(--brand-primary)",
-                          textDecoration: "underline", fontWeight: 700
-                        }}
-                      >
-                        {lang === "ko" ? "영수증 출력" : "Invoice PDF"}
-                      </button>
-                      
-                      {/* Show cancel button if not already cancelled */}
+                      {/* Show action buttons if not already cancelled */}
                       {deal.status !== "cancelled" && (
-                        <button 
-                          onClick={() => handleCancelOrder(deal.id)}
-                          style={{ 
-                            fontSize: "0.7rem", padding: "4px 8px", 
-                            color: "#ba1a1a", background: "none", border: "none",
-                            textDecoration: "underline", fontWeight: 700, cursor: "pointer"
-                          }}
-                        >
-                          {lang === "ko" ? "주문 취소" : "Cancel Order"}
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => handleDownloadInvoice(deal)}
+                            className="btn-text"
+                            style={{ 
+                              fontSize: "0.7rem", padding: "4px 8px", color: "var(--brand-primary)",
+                              textDecoration: "underline", fontWeight: 700
+                            }}
+                          >
+                            {lang === "ko" ? "영수증 출력" : "Invoice PDF"}
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleCancelOrder(deal.id)}
+                            style={{ 
+                              fontSize: "0.7rem", padding: "4px 8px", 
+                              color: "#ba1a1a", background: "none", border: "none",
+                              textDecoration: "underline", fontWeight: 700, cursor: "pointer"
+                            }}
+                          >
+                            {lang === "ko" ? "주문 취소" : "Cancel Order"}
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
