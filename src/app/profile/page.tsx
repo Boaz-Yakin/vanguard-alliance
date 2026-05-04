@@ -13,7 +13,7 @@ export default function ProfilePage() {
 
   const t = {
     ko: {
-      back: "← 뒤로",
+      back: "뒤로",
       title: "점주 프로필",
       trustProfile: "VANGUARD 신뢰 프로필",
       trustSub: "귀하의 네트워크 평판과 주문량 보상입니다.",
@@ -31,7 +31,7 @@ export default function ProfilePage() {
       loading: "프로필 불러오는 중..."
     },
     en: {
-      back: "← Back",
+      back: "Back",
       title: "Owner Profile",
       trustProfile: "VANGUARD Trust Profile",
       trustSub: "Your network reputation and order volume rewards.",
@@ -202,8 +202,8 @@ export default function ProfilePage() {
       
       <nav className="top-nav" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 1.5rem" }}>
         <div style={{ textAlign: "left" }}>
-          <a href="/" style={{ color: "var(--on-surface)", textDecoration: "none", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-            <span>←</span> {t.back}
+          <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "var(--on-surface)", textDecoration: "none", fontWeight: "700" }}>
+            ← <span style={{ fontSize: "0.9rem" }}>{t.back}</span>
           </a>
         </div>
         
