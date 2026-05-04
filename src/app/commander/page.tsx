@@ -107,7 +107,7 @@ export default function CommanderPage() {
     }
 
     if (res.success) {
-      alert(editingId ? "작전 정보가 수정되었습니다." : "전략적 공동구매 아이템이 성공적으로 게시되었습니다.");
+      alert(editingId ? "작전 정보가 수정되었습니다." : "전략적 빅딜 아이템이 성공적으로 게시되었습니다.");
       setEditingId(null);
       setForm(initialForm);
       await loadData();

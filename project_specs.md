@@ -8,14 +8,12 @@ Build a high-premium, high-conversion order application for "VANGUARD ALLIANCE" 
    - **Digital Order Guide**: Custom "Tap-Tap-Order" inventory for each store owner.
    - **Routing Engine**: Automatically split a single cart into multiple supplier-specific orders.
    - **Multi-channel Dispatcher**: Send orders via Email (SendGrid), SMS (Twilio), or WhatsApp without requiring suppliers to install an app.
-2. **User Point & Level System (Vanguard Special)**
-   - Accumulate points on every purchase.
-   - Store "Trust Scores" and "Levels" to unlock better group-buy deals.
-3. **AI-Driven Group Buying**
-   - Automatically detect high-volume items (e.g., cooking oil) and suggest group buys to nearby stores.
-   - Real-time progress tracking for group discounts.
-4. **Global Standard (Multi-language)**
-   - Support for Korean (KO) and English (EN) interfaces to serve a diverse set of store owners and suppliers.
+2. **Big Deal Volume Achievement (Vanguard Special)**
+   - Aggregate demand for high-volume items.
+   - Real-time participation tracking (0-100%).
+   - Automatic dispatch to vendors upon reaching 100% volume.
+3. **Global Standard (Multi-language)**
+   - Support for Korean (KO) and English (EN) interfaces.
 
 ## 🛠 Tech Stack
 - **Frontend**: Next.js (App Router, TypeScript)

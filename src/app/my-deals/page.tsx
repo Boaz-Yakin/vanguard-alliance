@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { DealService } from "@/services/dealService";
+import { generateAmazonInvoice } from "@/lib/invoiceGenerator";
 
 type DealEntry = {
   id: string;
@@ -18,15 +20,16 @@ type DealEntry = {
 export default function MyDealsPage() {
   const [lang, setLang] = useState<"ko" | "en">("ko");
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [deals, setDeals] = useState<DealEntry[]>([]);
 
   const t = {
     ko: {
-      title: "내 공동구매 내역",
+      title: "주문내역",
       subtitle: "레스토랑 발주 장부",
-      empty: "참여한 공동구매가 없습니다.",
-      emptyHint: "메인 화면에서 딜에 참여해보세요!",
+      empty: "참여한 빅딜이 없습니다.",
+      emptyHint: "메인 화면에서 빅딜에 참여해보세요!",
       goHome: "딜 둘러보기 →",
       totalLabel: "총 발주 합계",
       colItem: "상품명",
@@ -39,10 +42,10 @@ export default function MyDealsPage() {
       statClosed: "마감",
     },
     en: {
-      title: "My Group Deals",
+      title: "My Big Deals",
       subtitle: "Restaurant Order History",
-      empty: "No active participations yet.",
-      emptyHint: "Browse deals on the home screen!",
+      empty: "No big deals yet.",
+      emptyHint: "Browse big deals on the home screen!",
       goHome: "Browse Deals →",
       totalLabel: "Total Committed",
       colItem: "Product",
@@ -57,6 +60,11 @@ export default function MyDealsPage() {
   }[lang];
 
   useEffect(() => {
+    const savedLang = localStorage.getItem("vanguard-lang") as "ko" | "en";
+    if (savedLang) setLang(savedLang);
+  }, []);
+
+  useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -65,8 +73,22 @@ export default function MyDealsPage() {
       }
       setUser(user);
 
-      // Fetch orders joined by this user, with deal info
+      // Fetch user profile for invoice address
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      setProfile(prof);
+
+      // Fetch orders joined by this user
       try {
+        // 1. Get all deals first for English lookup
+        const { data: allDeals } = await supabase.from("deals").select("item_name, item_name_en");
+        const dealMap = new Map();
+        allDeals?.forEach((d: any) => dealMap.set(d.item_name, d.item_name_en));
+
+        // 2. Fetch orders without broken join
         const { data, error } = await supabase
           .from("orders")
           .select(`
@@ -84,14 +106,15 @@ export default function MyDealsPage() {
           .order("created_at", { ascending: false });
 
         if (!error && data) {
-          // Flatten orders → line-items for the ledger view
           const rows: DealEntry[] = [];
           data.forEach((order: any) => {
             (order.order_items || []).forEach((item: any) => {
+              // Smart lookup for English title
+              const enTitle = dealMap.get(item.product_name) || item.product_name;
               rows.push({
                 id: order.id,
                 item_name: item.product_name,
-                item_name_en: item.product_name,
+                item_name_en: enTitle,
                 unit: "unit",
                 price_per_unit: Number(item.price),
                 qty: Number(item.quantity),
@@ -111,6 +134,51 @@ export default function MyDealsPage() {
     }
     load();
   }, []);
+
+  const handleCancelOrder = async (orderId: string) => {
+    const confirmMsg = lang === "ko" 
+      ? "정말 주문을 취소하시겠습니까?\n공동구매 달성 수량에서 제외됩니다." 
+      : "Are you sure you want to cancel this order?\nIt will be removed from the deal total.";
+    
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await DealService.cancelOrder(orderId);
+      if (res.success) {
+        alert(lang === "ko" ? "주문이 취소되었습니다." : "Order cancelled successfully.");
+        window.location.reload(); // Refresh to show updated volume
+      } else {
+        alert(lang === "ko" ? "취소 실패: " + res.error : "Cancel failed: " + res.error);
+      }
+    } catch (e) {
+      console.error("VANGUARD: Cancel error", e);
+    }
+  };
+
+  const handleDownloadInvoice = async (deal: DealEntry) => {
+    console.log("[MyDeals] Starting invoice download & archive for:", deal.id);
+    try {
+      await generateAmazonInvoice({
+        orderId: deal.id,
+        userId: user.id,
+        date: new Date(deal.joined_at).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' }),
+        restaurantName: profile?.restaurant_name || user.email || "Valued Member",
+        restaurantAddress: profile?.restaurant_address || "Registered Business Address",
+        restaurantPhone: profile?.phone_number || "N/A",
+        taxId: profile?.tax_id,
+        items: [{
+          name: deal.item_name_en || deal.item_name,
+          qty: deal.qty,
+          price: deal.price_per_unit,
+          total: deal.total
+        }],
+        grandTotal: deal.total
+      }, true); // Set download=true
+      console.log("[MyDeals] Invoice generation and cloud archive call finished.");
+    } catch (err) {
+      console.error("[MyDeals] Error during invoice generation:", err);
+    }
+  };
 
   const grandTotal = deals.reduce((sum, d) => sum + d.total, 0);
 
@@ -190,17 +258,35 @@ export default function MyDealsPage() {
                         borderRadius: "100px", padding: "2px 10px", fontSize: "0.75rem", fontWeight: 700,
                         whiteSpace: "nowrap"
                       }}>
-                        {deal.status === "active" ? t.statActive : t.statClosed}
+                        {deal.status === "cancelled" 
+                          ? (lang === "ko" ? "주문 취소됨" : "Cancelled")
+                          : (deal.status === "dispatched" ? t.statClosed : t.statActive)}
                       </span>
-                      <span style={{
-                        background: deal.status === "active" ? "rgba(255,193,7,0.15)" : "rgba(40,167,69,0.15)",
-                        color: deal.status === "active" ? "#b38600" : "#28a745",
-                        border: `1px solid ${deal.status === "active" ? "#ffc107" : "#28a745"}`,
-                        borderRadius: "100px", padding: "2px 10px", fontSize: "0.75rem", fontWeight: 700,
-                        whiteSpace: "nowrap"
-                      }}>
-                        {deal.status === "active" ? (lang === "ko" ? "입금 대기" : "Awaiting Deposit") : (lang === "ko" ? "결제 완료" : "Paid")}
-                      </span>
+                      {/* Cancellation logic maintained but deposit badge removed */}
+                      <button 
+                        onClick={() => handleDownloadInvoice(deal)}
+                        className="btn-text"
+                        style={{ 
+                          fontSize: "0.7rem", padding: "4px 8px", color: "var(--brand-primary)",
+                          textDecoration: "underline", fontWeight: 700
+                        }}
+                      >
+                        {lang === "ko" ? "영수증 출력" : "Invoice PDF"}
+                      </button>
+                      
+                      {/* Show cancel button if not already cancelled */}
+                      {deal.status !== "cancelled" && (
+                        <button 
+                          onClick={() => handleCancelOrder(deal.id)}
+                          style={{ 
+                            fontSize: "0.7rem", padding: "4px 8px", 
+                            color: "#ba1a1a", background: "none", border: "none",
+                            textDecoration: "underline", fontWeight: 700, cursor: "pointer"
+                          }}
+                        >
+                          {lang === "ko" ? "주문 취소" : "Cancel Order"}
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -237,7 +323,7 @@ export default function MyDealsPage() {
         </a>
         <a href="/my-deals" className="nav-item active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          {lang === "ko" ? "내 내역" : "My Deals"}
+          {lang === "ko" ? "주문내역" : "My Deals"}
         </a>
         <a href="/profile" className="nav-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>

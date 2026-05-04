@@ -5,16 +5,16 @@ To establish "VANGUARD ALLIANCE" as the dominant order routing platform by elimi
 
 ## 🎯 Strategic Pillars
 1. **The Frictionless Input (Zero-Entry):** Use the specialized Regex & AI hybrid parser to allow human-style ordering.
-2. **The Trust Engine (Loyalty):** Treat every order as a trust-building event. Points and Levels are not features; they are the currency of the alliance.
+2. **The Big Deal Engine (Volume Mastery):** Aggregating demand to unlock supply availability. The goal is 100% participation achievement.
 3. **The Multi-Channel Dispatch:** Ensure suppliers receive orders in the most convenient format (PDF via Email/SMS) without changing their existing workflow.
 4. **Resource Optimization Protocol:** All visual assets must be compressed (WebP/Client-side) to ensure infrastructure longevity and zero-friction UX.
-5. **Unified Group Buy Architecture (v1.1):** A single, clean group buy feed — no redundant layers. One data source, one rendering pipeline.
+5. **Unified Big Deal Architecture (v1.2):** A single, clean big deal feed. Focused on participation rates (0-100%).
 
 ## 🗺️ Execution Roadmap (The Critical Path)
 
 ### Phase 1.0: Foundations of Victory ✅
 - **Goal:** Functional end-to-end data flow with premium UI.
-- **Success Metric:** Order recorded in DB -> Supplier Mapped -> Points Awarded -> Success Badge Shown.
+- **Success Metric:** Order recorded in DB -> Supplier Mapped -> Achievement Tracked -> Success Badge Shown.
 - **Status:** COMPLETE.
 
 ### Phase 1.1: Fulfillment & Dispatch
@@ -22,11 +22,11 @@ To establish "VANGUARD ALLIANCE" as the dominant order routing platform by elimi
 - **Action E:** PDF generation (Client-side) & Email Dispatch (Edge Functions).
 - **Target:** 100% automated order relay to vendors.
 
-### Phase 2.0: Economic Domination ✅ (Simplified)
-- **Goal:** Unified Group Buying.
-- **Previous:** Dual-feed architecture (DealService + GroupBuyingService) — redundant.
-- **Current (v1.1):** Single unified feed powered by DealService. GroupBuyingService & GroupDeals component eliminated.
-- **Mechanism:** Deal tiers with progressive discount unlocks via single `deals` table.
+### Phase 1.2: Strategic Pivot (Big Deal) 🚀
+- **Goal:** Simplify value proposition.
+- **Action:** Rename "Group Buy" to "Big Deal".
+- **Action:** Remove complex discount tiers and loyalty points.
+- **Current (v1.2):** Single unified feed focused on volume achievement.
 
 ## 📋 Architecture Changes (v1.1 — Simplification Sprint)
 - **REMOVED:** `src/components/GroupDeals.tsx` — redundant dual-feed component

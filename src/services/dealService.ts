@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { LoyaltyService } from "./loyaltyService";
+import { GoogleSheetsService } from "./googleSheetsService";
 
 export interface DealTierInput {
   threshold_pct: number;
@@ -59,6 +60,20 @@ export class DealService {
           .insert(tiersWithId);
 
         if (tiersError) throw tiersError;
+      }
+
+      if (deal) {
+        await GoogleSheetsService.logDeal({
+          dealId: deal.id,
+          itemName: deal.item_name,
+          category: deal.category,
+          price: deal.price_per_unit,
+          targetVolume: deal.target_volume,
+          currentVolume: 0,
+          status: deal.status,
+          expiresAt: deal.expires_at,
+          isPrivate: deal.is_private
+        });
       }
 
       return { success: true, data: deal };
@@ -173,8 +188,22 @@ export class DealService {
       // We don't throw if this fails, as the 'archived' status already hides it.
       try {
         await supabase.from('deal_tiers').delete().eq('deal_id', dealId);
-        await supabase.from('deals').delete().eq('id', dealId);
-        return { success: true, method: 'deleted' };
+        const { error: deleteError } = await supabase.from('deals').delete().eq('id', dealId);
+        
+        // Log the deletion/archival event
+        await GoogleSheetsService.logDeal({
+          dealId: dealId,
+          itemName: updateData[0]?.item_name || "Unknown",
+          category: updateData[0]?.category || "Unknown",
+          price: updateData[0]?.price_per_unit || 0,
+          targetVolume: updateData[0]?.target_volume || 0,
+          currentVolume: updateData[0]?.current_volume || 0,
+          status: deleteError ? 'archived' : 'deleted',
+          expiresAt: updateData[0]?.expires_at || "",
+          isPrivate: updateData[0]?.is_private || false
+        });
+
+        return { success: true, method: deleteError ? 'archived' : 'deleted' };
       } catch (e) {
         // If hard delete fails, it's already archived, so it's a success anyway.
         return { success: true, method: 'archived' };
@@ -223,6 +252,18 @@ export class DealService {
 
         if (tiersError) throw tiersError;
       }
+
+      await GoogleSheetsService.logDeal({
+        dealId: dealId,
+        itemName: input.item_name,
+        category: input.category,
+        price: input.price_per_unit,
+        targetVolume: input.target_volume,
+        currentVolume: 0, // Placeholder, usually fetched or maintained
+        status: 'active',
+        expiresAt: input.expires_at,
+        isPrivate: input.is_private || false
+      });
 
       return { success: true };
     } catch (e) {
@@ -316,6 +357,8 @@ export class DealService {
           
           if (itemsError) throw itemsError;
           await LoyaltyService.grantTransactionReward(user.id, totalAmount);
+          
+          await LoyaltyService.grantTransactionReward(user.id, totalAmount);
         }
       }
 
@@ -341,6 +384,79 @@ export class DealService {
       return { success: true, newVolume: data.current_volume };
     } catch (e) {
       console.error("VANGUARD: Failed to join deal.", e);
+      return { success: false, error: e };
+    }
+  }
+
+  /**
+   * Strategically cancels an order and restores the deal volume.
+   */
+  static async cancelOrder(orderId: string): Promise<{ success: boolean; error?: any }> {
+    try {
+      // 1. Fetch order items to know what to subtract
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (itemsError || !items) throw itemsError || new Error("Order items not found");
+
+      for (const item of items) {
+        const qty = Number(item.quantity);
+        
+        // 2. Find the deal associated with this product name
+        const { data: deal } = await supabase
+          .from('deals')
+          .select('id, current_volume, target_volume')
+          .eq('item_name', item.product_name)
+          .maybeSingle();
+
+        if (deal) {
+          const newVol = Math.max(0, Number(deal.current_volume) - qty);
+          const shouldReactivate = newVol < deal.target_volume;
+          
+          await supabase
+            .from('deals')
+            .update({ 
+              current_volume: newVol,
+              status: shouldReactivate ? 'active' : 'completed'
+            })
+            .eq('id', deal.id);
+        }
+      }
+
+      // 3. Mark order as cancelled
+      const { data: updatedOrder, error: updateError } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+        .select('*, profiles(restaurant_name, phone_number)')
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Fetch user to get email
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 4. Log to Google Sheets
+      if (updatedOrder && items.length > 0) {
+        for (const item of items) {
+          await GoogleSheetsService.logCancellation({
+            orderId: orderId,
+            userId: updatedOrder.user_id,
+            email: user?.email || "unknown@vanguard.test",
+            storeName: (updatedOrder.profiles as any)?.restaurant_name || "Unknown Store",
+            phone: (updatedOrder.profiles as any)?.phone_number || "N/A",
+            item: item.product_name,
+            qty: Number(item.quantity),
+            amount: Number(item.price) * Number(item.quantity)
+          });
+        }
+      }
+
+      return { success: true };
+    } catch (e) {
+      console.error("VANGUARD: Cancellation Maneuver Failed.", e);
       return { success: false, error: e };
     }
   }

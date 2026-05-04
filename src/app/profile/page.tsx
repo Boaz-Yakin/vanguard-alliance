@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { GoogleSheetsService } from "@/services/googleSheetsService";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -54,6 +55,7 @@ export default function ProfilePage() {
     restaurant_address: "",
     phone_number: "",
     prologue: "",
+    tax_id: "",
     points: 0,
     trust_score: 0,
     level: 1
@@ -76,7 +78,7 @@ export default function ProfilePage() {
       try {
         const { data, error: fetchError } = await supabase
           .from('profiles')
-          .select('restaurant_name, restaurant_address, phone_number, prologue, points, trust_score, level')
+          .select('restaurant_name, restaurant_address, phone_number, prologue, tax_id, points, trust_score, level')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -94,6 +96,7 @@ export default function ProfilePage() {
             restaurant_address: metadata.restaurant_address || metadata.business_address || "",
             phone_number: metadata.phone_number || "",
             prologue: metadata.prologue || "",
+            tax_id: "",
             points: 0,
             trust_score: 2.75,
             level: 1
@@ -108,6 +111,16 @@ export default function ProfilePage() {
             ...initialProfile,
             updated_at: new Date().toISOString()
           });
+
+          // Log to Google Sheets
+          await GoogleSheetsService.logUser({
+            userId: user.id,
+            email: user.email || "",
+            storeName: initialProfile.restaurant_name,
+            phone: initialProfile.phone_number,
+            address: initialProfile.restaurant_address,
+            taxId: initialProfile.tax_id
+          });
         } else {
           // Sync DB data with UI, prioritizing DB values but falling back to metadata if DB values are missing
           setProfile({
@@ -115,6 +128,7 @@ export default function ProfilePage() {
             restaurant_address: data.restaurant_address || metadata.restaurant_address || "",
             phone_number: data.phone_number || metadata.phone_number || "",
             prologue: data.prologue || metadata.prologue || "",
+            tax_id: data.tax_id || "",
             points: data.points || 0,
             trust_score: data.trust_score || 2.75,
             level: data.level || 1
@@ -155,6 +169,17 @@ export default function ProfilePage() {
         });
       
       if (error) throw error;
+
+      // Log to Google Sheets
+      await GoogleSheetsService.logUser({
+        userId: user.id,
+        email: user.email || "",
+        storeName: profile.restaurant_name,
+        phone: profile.phone_number,
+        address: profile.restaurant_address,
+        taxId: profile.tax_id
+      });
+
       setMessage("Profile successfully updated.");
     } catch (err: any) {
       console.warn(err);
@@ -175,21 +200,37 @@ export default function ProfilePage() {
   return (
     <div className="container" style={{ padding: "0 1.5rem", paddingBottom: "100px" }}>
       
-      <nav className="top-nav" style={{ justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <a href="/" style={{ color: "var(--on-surface)", textDecoration: "none" }}>{t.back}</a>
-          <h1 className="top-nav-title display-txt">{t.title}</h1>
+      <nav className="top-nav" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 1.5rem" }}>
+        <div style={{ textAlign: "left" }}>
+          <a href="/" style={{ color: "var(--on-surface)", textDecoration: "none", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <span>←</span> {t.back}
+          </a>
         </div>
-        <button 
-          onClick={() => {
-            const next = lang === "ko" ? "en" : "ko";
-            setLang(next);
-            localStorage.setItem("vanguard-lang", next);
-          }}
-          style={{ background: "var(--surface-variant)", border: "1px solid var(--outline-variant)", borderRadius: "var(--radius-md)", padding: "4px 10px", cursor: "pointer", fontWeight: "bold" }}
-        >
-          {lang === "ko" ? "EN" : "KR"}
-        </button>
+        
+        <h1 className="top-nav-title display-txt" style={{ margin: 0, textAlign: "center", whiteSpace: "nowrap" }}>
+          {t.title}
+        </h1>
+
+        <div style={{ textAlign: "right" }}>
+          <button 
+            onClick={() => {
+              const next = lang === "ko" ? "en" : "ko";
+              setLang(next);
+              localStorage.setItem("vanguard-lang", next);
+            }}
+            style={{ 
+              background: "var(--surface-variant)", 
+              border: "1px solid var(--outline-variant)", 
+              borderRadius: "var(--radius-md)", 
+              padding: "4px 10px", 
+              cursor: "pointer", 
+              fontWeight: "bold",
+              color: "var(--on-surface-variant)"
+            }}
+          >
+            {lang === "ko" ? "EN" : "KR"}
+          </button>
+        </div>
       </nav>
 
       <div className="section mt-4" style={{ background: "var(--surface-container-lowest)", padding: "1.5rem", borderRadius: "1rem", boxShadow: "var(--ambient-shadow)", display: "flex", gap: "1rem", alignItems: "center", justifyContent: "space-between" }}>
@@ -251,6 +292,20 @@ export default function ProfilePage() {
               value={profile.phone_number}
               onChange={handleChange}
               placeholder="02-123-4567"
+              style={{ width: "100%", padding: "12px", borderRadius: "0.5rem", border: "1px solid var(--outline-variant)" }}
+            />
+          </div>
+
+          <div>
+            <label className="label-md" style={{ color: "var(--on-surface-variant)", marginBottom: "4px", display: "block" }}>
+              {lang === "ko" ? "조지아주 도매 면세 번호 (Form ST-5)" : "State Tax ID (ST-5 Exemption)"}
+            </label>
+            <input 
+              type="text" 
+              name="tax_id"
+              value={profile.tax_id}
+              onChange={handleChange}
+              placeholder={lang === "ko" ? "예: 123-45678-9" : "e.g. 123-45678-9 (For 0% Wholesale Tax)"}
               style={{ width: "100%", padding: "12px", borderRadius: "0.5rem", border: "1px solid var(--outline-variant)" }}
             />
           </div>
