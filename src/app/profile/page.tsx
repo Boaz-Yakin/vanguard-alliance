@@ -238,10 +238,6 @@ export default function ProfilePage() {
           <h2 className="title-lg" style={{ color: "var(--on-surface)" }}>{t.trustProfile}</h2>
           <p className="label-md mt-1" style={{ color: "var(--on-surface-variant)" }}>{t.trustSub}</p>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--primary)" }}>Lv.{profile.level}</div>
-          <div className="label-sm" style={{ fontWeight: 700, color: "var(--on-surface)" }}>{profile.points.toLocaleString()} PTS</div>
-        </div>
       </div>
       
       <div className="section mt-4" style={{ background: "linear-gradient(135deg, rgba(230,190,138,0.1) 0%, rgba(200,150,100,0.05) 100%)", padding: "1.5rem", borderRadius: "1rem", boxShadow: "var(--ambient-shadow)" }}>
